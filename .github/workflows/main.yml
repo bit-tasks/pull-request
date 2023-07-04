@@ -17,3 +17,5 @@ jobs:
             ws-dir: 'test-data'
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@main
+      - name: Bit Lanes
+        run: bit lanes list --json
