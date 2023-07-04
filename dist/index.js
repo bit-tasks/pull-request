@@ -10914,7 +10914,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     yield exec('bit status --strict', { cwd: wsdir });
     yield exec('bit build', { cwd: wsdir });
-    yield exec(`bit lane create PR#-${lane}`, { cwd: wsdir });
+    yield exec(`bit lane create PR-${lane}`, { cwd: wsdir });
     yield exec('bit snap -m "CI"', { cwd: wsdir });
     yield exec('bit export', { cwd: wsdir });
 });

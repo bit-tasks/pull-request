@@ -4,7 +4,7 @@ const run: (exec: ExecFunction, laneName: string, wsdir: string) => Promise<void
   await exec('bit status --strict', { cwd: wsdir });
   await exec('bit build', { cwd: wsdir });
 
-  await exec(`bit lane create PR#-${lane}`, { cwd: wsdir });
+  await exec(`bit lane create PR-${lane}`, { cwd: wsdir });
   await exec('bit snap -m "CI"', { cwd: wsdir });
   await exec('bit export', { cwd: wsdir });
 }
