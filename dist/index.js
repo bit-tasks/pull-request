@@ -10912,9 +10912,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+    const org = process.env.ORG;
+    const scope = process.env.SCOPE;
+    const laneName = `pr-${lane}`;
+    try {
+        yield exec(`bit lane remove ${org}.${scope}/${laneName} --remote`, { cwd: wsdir });
+    }
+    catch (error) {
+        console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
+    }
     yield exec('bit status --strict', { cwd: wsdir });
     yield exec('bit build', { cwd: wsdir });
-    yield exec(`bit lane create pr-${lane}`, { cwd: wsdir });
+    yield exec(`bit lane create ${laneName}`, { cwd: wsdir });
     yield exec('bit snap -m "CI"', { cwd: wsdir });
     yield exec('bit export', { cwd: wsdir });
 });
