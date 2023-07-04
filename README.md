@@ -31,7 +31,7 @@ jobs:
         uses: bit-tasks/init@v1
         with:
           ws-dir: '<WORKSPACE_DIR_PATH>'
-      - name: Bit Verify
+      - name: Bit Pull Request
         uses: bit-tasks/pull-request@v1
 ```
 
