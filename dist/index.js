@@ -10880,7 +10880,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const { context, GitHub } = __nccwpck_require__(5438);
+const { context, getOctokit } = __nccwpck_require__(5438);
 const exec_1 = __nccwpck_require__(1514);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
@@ -10889,7 +10889,7 @@ try {
     const laneName = `pr-${(_b = (_a = context === null || context === void 0 ? void 0 : context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number.toString()}` || "pr-testlane";
     (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
         const githubToken = process.env.GITHUB_TOKEN;
-        const octokit = new GitHub(githubToken);
+        const octokit = getOctokit(githubToken);
         const { owner, repo } = context.repo;
         const prNumber = context.payload.pull_request.number;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;

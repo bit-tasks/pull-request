@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-const { context, GitHub } = require('@actions/github');
+const { context, getOctokit } = require('@actions/github');
 import { exec } from "@actions/exec";
 import run, { ExecFunction } from "./scripts/pull-request";
 
@@ -10,7 +10,7 @@ try {
   
   run(stdExec, laneName, wsDir).then((): void => {
     const githubToken = process.env.GITHUB_TOKEN;
-    const octokit = new GitHub(githubToken);
+    const octokit = getOctokit(githubToken);
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request.number;
     const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`
