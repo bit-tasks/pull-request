@@ -10933,7 +10933,6 @@ const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* (
     //   console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
     // }
     yield exec('bit status --strict', { cwd: wsdir });
-    yield exec('bit build', { cwd: wsdir });
     yield exec(`bit lane create ${lane}`, { cwd: wsdir });
     yield exec('bit snap -m "CI"', { cwd: wsdir });
     yield exec('bit export', { cwd: wsdir });
