@@ -24,4 +24,4 @@ jobs:
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@main
       - name: Bit Lanes
-        run: cd test-data && bit lane show testlane
+        run: cd test-data && bit lane list
