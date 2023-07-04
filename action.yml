@@ -1,0 +1,9 @@
+name: 'Bit Verify'
+description: 'Verify issues in bit components'
+inputs:
+  ws-dir:
+    description: "Workspace json file directory path"
+    required: false
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
