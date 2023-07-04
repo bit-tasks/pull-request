@@ -3,7 +3,7 @@ Verify the pull request along with the modifications for the Bit components.
 
 # GitHub Actions
 
-This CD Task, create a Bit lane, and adds the component changes to it, to verify any components inside a Pull request.
+This CD Task, create a Bit lane, and adds the component changes to it to verify any components inside a Pull request.
 
 ## Inputs
 
