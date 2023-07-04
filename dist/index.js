@@ -10880,14 +10880,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const github_1 = __nccwpck_require__(5438);
+const { context, GitHub } = __nccwpck_require__(5438);
 const exec_1 = __nccwpck_require__(1514);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const stdExec = (command, options) => (0, exec_1.exec)(command, [], options);
-    const laneName = ((_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number.toString()) || "testlane";
-    (0, pull_request_1.default)(stdExec, laneName, wsDir);
+    const laneName = `pr-${(_b = (_a = context === null || context === void 0 ? void 0 : context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number.toString()}` || "pr-testlane";
+    (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
+        const githubToken = process.env.GITHUB_TOKEN;
+        const octokit = new GitHub(githubToken);
+        const { owner, repo } = context.repo;
+        const prNumber = context.payload.pull_request.number;
+        const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+        const commentBody = `Link to lane: ${laneLink}`;
+        octokit.issues.createComment({
+            owner,
+            repo,
+            issue_number: prNumber,
+            body: commentBody
+        });
+    });
 }
 catch (error) {
     core.setFailed(error.message);
@@ -10914,16 +10927,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    const laneName = `pr-${lane}`;
     try {
-        yield exec(`bit lane remove ${org}.${scope}/${laneName} --remote`, { cwd: wsdir });
+        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
     }
     catch (error) {
         console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
     }
     yield exec('bit status --strict', { cwd: wsdir });
     yield exec('bit build', { cwd: wsdir });
-    yield exec(`bit lane create ${laneName}`, { cwd: wsdir });
+    yield exec(`bit lane create ${lane}`, { cwd: wsdir });
     yield exec('bit snap -m "CI"', { cwd: wsdir });
     yield exec('bit export', { cwd: wsdir });
 });
