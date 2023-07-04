@@ -1,6 +1,10 @@
 name: Test Action
 on:
   workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
 jobs:
   release:
     runs-on: ubuntu-latest
