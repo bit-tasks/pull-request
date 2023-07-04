@@ -10927,12 +10927,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    try {
-        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
-    }
-    catch (error) {
-        console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
-    }
+    // try {
+    //   await exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
+    // } catch (error) {
+    //   console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
+    // }
     yield exec('bit status --strict', { cwd: wsdir });
     yield exec('bit build', { cwd: wsdir });
     yield exec(`bit lane create ${lane}`, { cwd: wsdir });
