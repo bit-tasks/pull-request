@@ -10894,7 +10894,7 @@ try {
         const prNumber = context.payload.pull_request.number;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
         const commentBody = `Link to lane: ${laneLink}`;
-        octokit.issues.createComment({
+        octokit.pull_request.createComment({
             owner,
             repo,
             issue_number: prNumber,
