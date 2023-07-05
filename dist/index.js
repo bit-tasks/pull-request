@@ -10880,19 +10880,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const { context, getOctokit } = __nccwpck_require__(5438);
+const github_1 = __nccwpck_require__(5438);
 const exec_1 = __nccwpck_require__(1514);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const stdExec = (command, options) => (0, exec_1.exec)(command, [], options);
-    const laneName = `pr-${(_b = (_a = context === null || context === void 0 ? void 0 : context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number.toString()}` || "pr-testlane";
+    const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
+    const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}` || "pr-testlane";
+    if (!prNumber) {
+        throw new Error("Pull Request number is not found");
+    }
     (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
         const githubToken = process.env.GITHUB_TOKEN;
-        const octokit = getOctokit(githubToken);
-        core.debug(octokit);
-        const { owner, repo } = context.repo;
-        const prNumber = context.payload.pull_request.number;
+        if (!githubToken) {
+            throw new Error("GitHub token not found");
+        }
+        const octokit = (0, github_1.getOctokit)(githubToken);
+        const { owner, repo } = github_1.context.repo;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
         const commentBody = `Link to lane: ${laneLink}`;
         core.debug(commentBody);
@@ -10900,7 +10905,7 @@ try {
             owner,
             repo,
             issue_number: prNumber,
-            body: commentBody
+            body: commentBody,
         });
     });
 }
