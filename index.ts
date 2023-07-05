@@ -23,7 +23,7 @@ try {
     }
     const octokit = getOctokit(githubToken);
     const { owner, repo } = context.repo;
-    const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+    const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
     const commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
 
     octokit.rest.issues.createComment({
