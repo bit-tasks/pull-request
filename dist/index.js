@@ -10899,7 +10899,7 @@ try {
         const octokit = (0, github_1.getOctokit)(githubToken);
         const { owner, repo } = github_1.context.repo;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-        const commentBody = `Link to lane: ${laneLink}`;
+        const commentBody = `⚠️ Attention: The components in this pull request may have modifications. Please review the changes in the Bit lane: ${laneLink}`;
         octokit.rest.issues.createComment({
             owner,
             repo,
@@ -10934,7 +10934,7 @@ const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* (
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
     try {
-        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
+        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote --silent`, { cwd: wsdir });
     }
     catch (error) {
         console.error(`Error while removing bit lane: ${error}. Lane may not exist`);

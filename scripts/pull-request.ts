@@ -5,7 +5,7 @@ const run: (exec: ExecFunction, laneName: string, wsdir: string) => Promise<void
   const scope = process.env.SCOPE;
 
   try {
-    await exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
+    await exec(`bit lane remove ${org}.${scope}/${lane} --remote --silent`, { cwd: wsdir });
   } catch (error) {
     console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
   }
