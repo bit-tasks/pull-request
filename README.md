@@ -18,7 +18,12 @@ Define the `bit-tasks/pull-request@v1` action in your pipeline before using the 
 ```yaml
 name: Test Bit Verify
 on:
-  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+permissions:
+  pull-requests: write
 jobs:
   release:
     runs-on: ubuntu-latest
