@@ -10890,11 +10890,13 @@ try {
     (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
         const githubToken = process.env.GITHUB_TOKEN;
         const octokit = getOctokit(githubToken);
+        core.debug(octokit);
         const { owner, repo } = context.repo;
         const prNumber = context.payload.pull_request.number;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
         const commentBody = `Link to lane: ${laneLink}`;
-        octokit.pull_request.createComment({
+        core.debug(commentBody);
+        octokit.rest.issues.createComment({
             owner,
             repo,
             issue_number: prNumber,
