@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BIT_TOKEN: ${{ secrets.BIT_TOKEN }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v2
