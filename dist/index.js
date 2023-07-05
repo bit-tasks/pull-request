@@ -10900,7 +10900,6 @@ try {
         const { owner, repo } = github_1.context.repo;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
         const commentBody = `Link to lane: ${laneLink}`;
-        core.debug(commentBody);
         octokit.rest.issues.createComment({
             owner,
             repo,
@@ -10934,11 +10933,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    // try {
-    //   await exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
-    // } catch (error) {
-    //   console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
-    // }
+    try {
+        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote`, { cwd: wsdir });
+    }
+    catch (error) {
+        console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
+    }
     yield exec('bit status --strict', { cwd: wsdir });
     yield exec(`bit lane create ${lane}`, { cwd: wsdir });
     yield exec('bit snap -m "CI"', { cwd: wsdir });

@@ -25,7 +25,6 @@ try {
     const { owner, repo } = context.repo;
     const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
     const commentBody = `Link to lane: ${laneLink}`;
-    core.debug(commentBody);
 
     octokit.rest.issues.createComment({
       owner,
