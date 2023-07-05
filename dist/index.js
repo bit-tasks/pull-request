@@ -10886,27 +10886,10 @@ const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const stdExec = (command, options) => (0, exec_1.exec)(command, [], options);
-    const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
-    const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}` || "pr-testlane";
-    if (!prNumber) {
-        throw new Error("Pull Request number is not found");
-    }
+    const laneName = `pr-${(_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number}` || "pr-testlane";
     (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
-        const githubToken = process.env.GITHUB_TOKEN;
-        if (!githubToken) {
-            throw new Error("GitHub token not found");
-        }
-        const octokit = (0, github_1.getOctokit)(githubToken);
-        const { owner, repo } = github_1.context.repo;
         const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-        const commentBody = `Link to lane: ${laneLink}`;
-        core.debug(commentBody);
-        octokit.rest.issues.createComment({
-            owner,
-            repo,
-            issue_number: prNumber,
-            body: commentBody,
-        });
+        core.setOutput('Bit Lane URL', laneLink);
     });
 }
 catch (error) {
