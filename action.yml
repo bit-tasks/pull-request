@@ -1,5 +1,5 @@
-name: 'Bit Verify'
-description: 'Verify issues in bit components'
+name: 'Bit Pull Request'
+description: 'Build components, snap and update lane for Pull Requests'
 inputs:
   ws-dir:
     description: "Workspace json file directory path"
