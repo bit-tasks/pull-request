@@ -1,5 +1,8 @@
 name: 'Bit Pull Request'
 description: 'Build components, snap and update lane for Pull Requests'
+branding: 
+  icon: 'git-pull-request'
+  color: 'purple'
 inputs:
   ws-dir:
     description: "Workspace json file directory path"
