@@ -1,5 +1,5 @@
 {
-  "name": "github-actions-verify",
+  "name": "github-action",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
