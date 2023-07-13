@@ -16,7 +16,7 @@ This CD Task, create a Bit lane, and adds the component changes to it, to verify
 Define the `bit-tasks/pull-request@v1` action in your pipeline before using the Verify.
 
 ```yaml
-name: Test Bit Verify
+name: Test Bit Pull Request
 on:
   pull_request:
     types:
