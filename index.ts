@@ -4,13 +4,13 @@ import run from "./scripts/pull-request";
 
 try {
   const wsDir: string = core.getInput("ws-dir") || process.env.WSDIR || "./";
-
   const prNumber = context?.payload?.pull_request?.number;
-  const laneName = `pr-${prNumber?.toString()}` || "pr-testlane";
 
   if (!prNumber) {
     throw new Error("Pull Request number is not found");
   }
+
+  const laneName = `pr-${prNumber?.toString()}`;
 
   run(laneName, wsDir).then((): void => {
     const githubToken = process.env.GITHUB_TOKEN;
