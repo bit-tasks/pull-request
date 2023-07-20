@@ -10881,17 +10881,15 @@ var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
-const exec_1 = __nccwpck_require__(1514);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
-    const stdExec = (command, options) => (0, exec_1.exec)(command, [], options);
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}` || "pr-testlane";
     if (!prNumber) {
         throw new Error("Pull Request number is not found");
     }
-    (0, pull_request_1.default)(stdExec, laneName, wsDir).then(() => {
+    (0, pull_request_1.default)(laneName, wsDir).then(() => {
         const githubToken = process.env.GITHUB_TOKEN;
         if (!githubToken) {
             throw new Error("GitHub token not found");
@@ -10916,7 +10914,7 @@ catch (error) {
 /***/ }),
 
 /***/ 595:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -10930,19 +10928,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const run = (exec, lane, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+const exec_1 = __nccwpck_require__(1514);
+const run = (laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
     try {
-        yield exec(`bit lane remove ${org}.${scope}/${lane} --remote --silent`, { cwd: wsdir });
+        yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
     }
     catch (error) {
         console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
     }
-    yield exec('bit status --strict', { cwd: wsdir });
-    yield exec(`bit lane create ${lane}`, { cwd: wsdir });
-    yield exec('bit snap -m "CI"', { cwd: wsdir });
-    yield exec('bit export', { cwd: wsdir });
+    yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
+    yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
+    yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
+    yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
 });
 exports["default"] = run;
 
