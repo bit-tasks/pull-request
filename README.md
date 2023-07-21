@@ -3,7 +3,7 @@ Verify the pull request along with the modifications for the Bit components.
 
 # GitHub Actions
 
-This CD Task, create a Bit lane, and adds the component changes to it, to verify any components inside a Pull request.
+This task creates a Bit lane and adds the component changes for you to verify any components inside a Pull request.
 
 ## Inputs
 
@@ -25,7 +25,7 @@ on:
 permissions:
   pull-requests: write
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     env:
       BIT_CONFIG_USER_TOKEN: ${{ secrets.BIT_CONFIG_USER_TOKEN }}
@@ -57,12 +57,4 @@ git tag -a -m "action release" v1 --force
 git push --follow-tags
 ```
 
-For more information refer [Create a javascript action](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action)
-
-## GitLab CI/CD
-
-For more information refer [Specify a custom CI/CD file](https://docs.gitlab.com/ee/ci/pipelines/settings.html#specify-a-custom-cicd-configuration-file)
-
-## Azure DevOps
-
-For more information refer [Add build task](https://learn.microsoft.com/en-us/azure/devops/extend/develop/add-build-task?view=azure-devops)
+For more information, refer to [Create a javascript action](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action)
