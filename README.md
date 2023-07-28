@@ -13,7 +13,7 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 ## Example usage
 
-**Note:** Use `bit-task/init@v1` as a prior step in your action before running Bit Verify.
+**Note:** Use `bit-task/init@v1` as a prior step in your action before running Bit Pull Request.
 
 ```yaml
 name: Test Bit Pull Request
