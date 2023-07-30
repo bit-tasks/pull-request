@@ -13,7 +13,7 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 ## Example usage
 
-**Note:** Use `bit-task/init@v1` as a prior step in your action before running Bit Pull Request.
+**Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v1`.
 
 ```yaml
 name: Test Bit Pull Request
@@ -28,8 +28,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      BIT_CONFIG_USER_TOKEN: ${{ secrets.BIT_CONFIG_USER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+      GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+      BIT_CONFIG_USER_TOKEN: ${{ secrets.BIT_CONFIG_USER_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
