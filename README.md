@@ -3,7 +3,7 @@ Verify the pull request along with the modifications for the Bit components.
 
 # GitHub Actions
 
-This CD Task, create a Bit lane, and adds the component changes to it, to verify any components inside a Pull request.
+This task creates a Bit lane and adds the component changes for you to verify any components inside a Pull request.
 
 ## Inputs
 
@@ -13,7 +13,7 @@ This CD Task, create a Bit lane, and adds the component changes to it, to verify
 
 ## Example usage
 
-**Note:** Use `bit-task/init@v1` as a prior step in your action before running Bit Verify.
+**Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v1`.
 
 ```yaml
 name: Test Bit Pull Request
@@ -25,11 +25,13 @@ on:
 permissions:
   pull-requests: write
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     env:
-      BIT_CONFIG_USER_TOKEN: ${{ secrets.BIT_CONFIG_USER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+      GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+      BIT_CONFIG_USER_TOKEN: ${{ secrets.BIT_CONFIG_USER_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -57,12 +59,4 @@ git tag -a -m "action release" v1 --force
 git push --follow-tags
 ```
 
-For more information refer [Create a javascript action](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action)
-
-## GitLab CI/CD
-
-For more information refer [Specify a custom CI/CD file](https://docs.gitlab.com/ee/ci/pipelines/settings.html#specify-a-custom-cicd-configuration-file)
-
-## Azure DevOps
-
-For more information refer [Add build task](https://learn.microsoft.com/en-us/azure/devops/extend/develop/add-build-task?view=azure-devops)
+For more information, refer to [Create a javascript action](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action)
