@@ -35,8 +35,8 @@ const run = async (
         { cwd: wsdir }
       );
     } catch (error) {
-      console.error(
-        `Error while removing bit lane: ${error}. Lane may not exist`
+      console.log(
+        `Cannot remove bit lane: ${error}. Lane may not exist`
       );
     }
 
