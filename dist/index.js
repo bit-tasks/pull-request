@@ -10883,28 +10883,18 @@ const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
+    const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
+    const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
+    if (!githubToken) {
+        throw new Error("GitHub token not found");
+    }
     if (!prNumber) {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(laneName, wsDir).then(() => {
-        const githubToken = process.env.GITHUB_TOKEN;
-        if (!githubToken) {
-            throw new Error("GitHub token not found");
-        }
-        const octokit = (0, github_1.getOctokit)(githubToken);
-        const { owner, repo } = github_1.context.repo;
-        const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-        const commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
-        octokit.rest.issues.createComment({
-            owner,
-            repo,
-            issue_number: prNumber,
-            body: commentBody,
-        });
-    });
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -10918,6 +10908,29 @@ catch (error) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10929,19 +10942,49 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
-const run = (laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+const github_1 = __nccwpck_require__(5438);
+const core = __importStar(__nccwpck_require__(2186));
+const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    try {
-        yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
+    let commentBody = "";
+    let statusRaw = "";
+    const options = {
+        cwd: wsdir,
+        listeners: {
+            stdout: (data) => {
+                statusRaw += data.toString();
+            },
+        },
+    };
+    yield (0, exec_1.exec)("bit status --json", [], options);
+    const status = JSON.parse(statusRaw.trim());
+    if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
+        try {
+            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
+        }
+        catch (error) {
+            console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
+        }
+        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
+        yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
+        yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
+        const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+        commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
     }
-    catch (error) {
-        console.error(`Error while removing bit lane: ${error}. Lane may not exist`);
+    else {
+        commentBody = `No component was added or modified in the pull request!`;
+        core.info(commentBody);
     }
-    yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
-    yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
-    yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
-    yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
+    const octokit = (0, github_1.getOctokit)(githubToken);
+    octokit.rest.issues.createComment({
+        owner,
+        repo,
+        issue_number: prNumber,
+        body: commentBody,
+    });
 });
 exports["default"] = run;
 

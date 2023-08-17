@@ -1,25 +1,65 @@
-import { exec } from "@actions/exec";
+import { exec, ExecOptions } from "@actions/exec";
+import { getOctokit } from "@actions/github";
+import * as core from "@actions/core";
 
-const run = async (laneName: string, wsdir: string) => {
+const run = async (
+  githubToken: string,
+  repo: string,
+  owner: string,
+  prNumber: number,
+  laneName: string,
+  wsdir: string
+) => {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
+  let commentBody = "";
 
-  try {
-    await exec(
-      `bit lane remove ${org}.${scope}/${laneName} --remote --silent`,
-      [],
-      { cwd: wsdir }
-    );
-  } catch (error) {
-    console.error(
-      `Error while removing bit lane: ${error}. Lane may not exist`
-    );
+  let statusRaw = "";
+  const options: ExecOptions = {
+    cwd: wsdir,
+    listeners: {
+      stdout: (data: Buffer) => {
+        statusRaw += data.toString();
+      },
+    },
+  };
+
+  await exec("bit status --json", [], options);
+  const status = JSON.parse(statusRaw.trim());
+
+  if (status.newComponents?.length || status.modifiedComponents?.length) {
+    try {
+      await exec(
+        `bit lane remove ${org}.${scope}/${laneName} --remote --silent`,
+        [],
+        { cwd: wsdir }
+      );
+    } catch (error) {
+      console.error(
+        `Error while removing bit lane: ${error}. Lane may not exist`
+      );
+    }
+
+    await exec("bit status --strict", [], { cwd: wsdir });
+    await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
+    await exec('bit snap -m "CI"', [], { cwd: wsdir });
+    await exec("bit export", [], { cwd: wsdir });
+
+    const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+    commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
+  } else {
+    commentBody = `No component was added or modified in the pull request!`;
+    core.info(commentBody);
   }
 
-  await exec("bit status --strict", [], { cwd: wsdir });
-  await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
-  await exec('bit snap -m "CI"', [], { cwd: wsdir });
-  await exec("bit export", [], { cwd: wsdir });
+  const octokit = getOctokit(githubToken);
+
+  octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: prNumber,
+    body: commentBody,
+  });
 };
 
 export default run;
