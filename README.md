@@ -1,4 +1,4 @@
-# Verify Components in Pull Request for CI/CD Pipelines
+# Verify Bit Components in Pull Request for CI/CD Pipelines
 Verify the pull request along with the modifications for the Bit components.
 
 # GitHub Actions
