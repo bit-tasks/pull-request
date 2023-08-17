@@ -26,7 +26,7 @@ jobs:
       - name: Add remote scope
         run: cd test-data && bit remote add http://localhost:4000
       - name: Temporarly adding bit snap
-        run: bit snap -m "CI"       
+        run: cd test-data && bit snap -m "CI"       
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@main
       - name: Bit Lanes
