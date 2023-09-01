@@ -28,6 +28,9 @@ const run = async (
   const status = JSON.parse(statusRaw.trim());
 
   if (status.newComponents?.length || status.modifiedComponents?.length) {
+    await exec("bit status --strict", [], { cwd: wsdir });
+    await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
+    await exec('bit snap -m "CI"', [], { cwd: wsdir });
     try {
       await exec(
         `bit lane remove ${org}.${scope}/${laneName} --remote --silent`,
@@ -35,14 +38,10 @@ const run = async (
         { cwd: wsdir }
       );
     } catch (error) {
-      console.error(
-        `Error while removing bit lane: ${error}. Lane may not exist`
+      console.log(
+        `Cannot remove bit lane: ${error}. Lane may not exist`
       );
     }
-
-    await exec("bit status --strict", [], { cwd: wsdir });
-    await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
-    await exec('bit snap -m "CI"', [], { cwd: wsdir });
     await exec("bit export", [], { cwd: wsdir });
 
     const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
