@@ -10961,15 +10961,15 @@ const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(v
     yield (0, exec_1.exec)("bit status --json", [], options);
     const status = JSON.parse(statusRaw.trim());
     if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
+        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
+        yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
         try {
             yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
         }
         catch (error) {
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
         }
-        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
-        yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
-        yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
         yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
         const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
         commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
