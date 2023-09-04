@@ -7,6 +7,7 @@ const run = async (
   repo: string,
   owner: string,
   prNumber: number,
+  prAction: string,
   laneName: string,
   wsdir: string
 ) => {
@@ -53,12 +54,15 @@ const run = async (
 
   const octokit = getOctokit(githubToken);
 
-  octokit.rest.issues.createComment({
-    owner,
-    repo,
-    issue_number: prNumber,
-    body: commentBody,
-  });
+  if(prAction === 'opened'){
+    octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: prNumber,
+      body: commentBody,
+    });
+  }
+
 };
 
 export default run;
