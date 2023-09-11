@@ -10908,29 +10908,6 @@ catch (error) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10943,12 +10920,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
-const core = __importStar(__nccwpck_require__(2186));
 const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    let commentBody = "";
     let statusRaw = "";
     const options = {
         cwd: wsdir,
@@ -10971,42 +10946,39 @@ const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(v
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
         }
         yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
-        const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-        commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
+        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     }
-    else {
-        commentBody = `No component was added or modified in the pull request!`;
-        core.info(commentBody);
-    }
+});
+const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __awaiter(void 0, void 0, void 0, function* () {
+    const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+    let commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
     const octokit = (0, github_1.getOctokit)(githubToken);
-    const timestamp = getHumanReadableTimestamp();
-    commentBody += `\n\n_Last updated: ${timestamp}_`;
     const comments = yield octokit.rest.issues.listComments({
         owner,
         repo,
         issue_number: prNumber,
     });
     const existingComment = comments.data.find((comment) => {
-        var _a, _b, _c;
-        return (((_a = comment.body) === null || _a === void 0 ? void 0 : _a.startsWith("No component was added or modified")) ||
-            ((_b = comment.body) === null || _b === void 0 ? void 0 : _b.includes("https://new.bit.cloud"))) &&
-            ((_c = comment.user) === null || _c === void 0 ? void 0 : _c.login) === owner;
+        var _a, _b;
+        return ((_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes("https://bit.cloud")) &&
+            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === owner;
     });
     if (existingComment) {
+        const updatedBody = `${commentIntro}\n\n_Lane updated: ${getHumanReadableTimestamp()}_`;
         yield octokit.rest.issues.updateComment({
             owner,
             repo,
             comment_id: existingComment.id,
-            body: commentBody,
+            body: updatedBody,
         });
-        return;
     }
     else {
+        const newBody = `${commentIntro}\n\n_Lane created: ${getHumanReadableTimestamp()}_`;
         yield octokit.rest.issues.createComment({
             owner,
             repo,
             issue_number: prNumber,
-            body: commentBody,
+            body: newBody,
         });
     }
 });
@@ -11018,7 +10990,7 @@ const getHumanReadableTimestamp = () => {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        timeZone: "UTC"
+        timeZone: "UTC",
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };

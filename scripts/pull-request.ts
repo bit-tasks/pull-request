@@ -1,6 +1,5 @@
 import { exec, ExecOptions } from "@actions/exec";
 import { getOctokit } from "@actions/github";
-import * as core from "@actions/core";
 
 const run = async (
   githubToken: string,
@@ -12,7 +11,6 @@ const run = async (
 ) => {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
-  let commentBody = "";
 
   let statusRaw = "";
   const options: ExecOptions = {
@@ -42,17 +40,15 @@ const run = async (
     }
     await exec("bit export", [], { cwd: wsdir });
 
-    const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-    commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
-  } else {
-    commentBody = `No component was added or modified in the pull request!`;
-    core.info(commentBody);
+    postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
   }
+};
 
+const postOrUpdateComment = async (githubToken: string, repo: string, owner: string, prNumber: number, laneName: string) => {
+  const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+  let commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
+  
   const octokit = getOctokit(githubToken);
-  const timestamp = getHumanReadableTimestamp();
-  commentBody += `\n\n_Last updated: ${timestamp}_`;
-
   const comments = await octokit.rest.issues.listComments({
     owner,
     repo,
@@ -61,25 +57,25 @@ const run = async (
 
   const existingComment = comments.data.find(
     (comment) =>
-      (comment.body?.startsWith("No component was added or modified") ||
-        comment.body?.includes("https://new.bit.cloud")) &&
+      comment.body?.includes("https://bit.cloud") &&
       comment.user?.login === owner
   );
 
   if (existingComment) {
+    const updatedBody = `${commentIntro}\n\n_Lane updated: ${getHumanReadableTimestamp()}_`;
     await octokit.rest.issues.updateComment({
       owner,
       repo,
       comment_id: existingComment.id,
-      body: commentBody,
+      body: updatedBody,
     });
-    return;
   } else {
+    const newBody = `${commentIntro}\n\n_Lane created: ${getHumanReadableTimestamp()}_`;
     await octokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: prNumber,
-      body: commentBody,
+      body: newBody,
     });
   }
 };
@@ -92,7 +88,7 @@ const getHumanReadableTimestamp = () => {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    timeZone: "UTC"
+    timeZone: "UTC",
   };
 
   return new Date().toLocaleString("en-US", options as any) + " UTC";
