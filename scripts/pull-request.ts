@@ -58,7 +58,7 @@ const postOrUpdateComment = async (githubToken: string, repo: string, owner: str
   const existingComment = comments.data.find(
     (comment) =>
       comment.body?.includes("https://bit.cloud") &&
-      comment.user?.login === owner
+      comment.user?.login === "github-actions[bot]"
   );
 
   if (existingComment) {

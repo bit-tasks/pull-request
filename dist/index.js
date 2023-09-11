@@ -10961,7 +10961,7 @@ const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __
     const existingComment = comments.data.find((comment) => {
         var _a, _b;
         return ((_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes("https://bit.cloud")) &&
-            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === owner;
+            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === "github-actions[bot]";
     });
     if (existingComment) {
         const updatedBody = `${commentIntro}\n\n_Lane updated: ${getHumanReadableTimestamp()}_`;
