@@ -91,10 +91,11 @@ const getHumanReadableTimestamp = () => {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
+    second: "2-digit",
+    timeZone: "UTC"
   };
 
-  return new Date().toLocaleString("en-US", options as any);
+  return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
 export default run;
