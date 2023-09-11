@@ -10877,12 +10877,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
-const fs_1 = __importDefault(__nccwpck_require__(7147));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
@@ -10894,10 +10893,8 @@ try {
     if (!prNumber) {
         throw new Error("Pull Request number is not found");
     }
-    const prAction = (_c = JSON.parse(fs_1.default.readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8"))) === null || _c === void 0 ? void 0 : _c.action; // values: opened, synchronize, closed
-    core.info("PR: " + prAction);
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, prAction, laneName, wsDir);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -10947,7 +10944,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
 const core = __importStar(__nccwpck_require__(2186));
-const run = (githubToken, repo, owner, prNumber, prAction, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
@@ -10982,8 +10979,30 @@ const run = (githubToken, repo, owner, prNumber, prAction, laneName, wsdir) => _
         core.info(commentBody);
     }
     const octokit = (0, github_1.getOctokit)(githubToken);
-    if (prAction === 'opened') {
-        octokit.rest.issues.createComment({
+    const timestamp = getHumanReadableTimestamp();
+    commentBody += `\n\n_Last updated: ${timestamp}_`;
+    const comments = yield octokit.rest.issues.listComments({
+        owner,
+        repo,
+        issue_number: prNumber,
+    });
+    const existingComment = comments.data.find((comment) => {
+        var _a, _b, _c;
+        return (((_a = comment.body) === null || _a === void 0 ? void 0 : _a.startsWith("No component was added or modified")) ||
+            ((_b = comment.body) === null || _b === void 0 ? void 0 : _b.includes("https://new.bit.cloud"))) &&
+            ((_c = comment.user) === null || _c === void 0 ? void 0 : _c.login) === owner;
+    });
+    if (existingComment) {
+        yield octokit.rest.issues.updateComment({
+            owner,
+            repo,
+            comment_id: existingComment.id,
+            body: commentBody,
+        });
+        return;
+    }
+    else {
+        yield octokit.rest.issues.createComment({
             owner,
             repo,
             issue_number: prNumber,
@@ -10991,6 +11010,17 @@ const run = (githubToken, repo, owner, prNumber, prAction, laneName, wsdir) => _
         });
     }
 });
+const getHumanReadableTimestamp = () => {
+    const options = {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    };
+    return new Date().toLocaleString("en-US", options);
+};
 exports["default"] = run;
 
 

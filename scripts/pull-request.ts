@@ -7,7 +7,6 @@ const run = async (
   repo: string,
   owner: string,
   prNumber: number,
-  prAction: string,
   laneName: string,
   wsdir: string
 ) => {
@@ -39,9 +38,7 @@ const run = async (
         { cwd: wsdir }
       );
     } catch (error) {
-      console.log(
-        `Cannot remove bit lane: ${error}. Lane may not exist`
-      );
+      console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
     }
     await exec("bit export", [], { cwd: wsdir });
 
@@ -53,16 +50,51 @@ const run = async (
   }
 
   const octokit = getOctokit(githubToken);
+  const timestamp = getHumanReadableTimestamp();
+  commentBody += `\n\n_Last updated: ${timestamp}_`;
 
-  if(prAction === 'opened'){
-    octokit.rest.issues.createComment({
+  const comments = await octokit.rest.issues.listComments({
+    owner,
+    repo,
+    issue_number: prNumber,
+  });
+
+  const existingComment = comments.data.find(
+    (comment) =>
+      (comment.body?.startsWith("No component was added or modified") ||
+        comment.body?.includes("https://new.bit.cloud")) &&
+      comment.user?.login === owner
+  );
+
+  if (existingComment) {
+    await octokit.rest.issues.updateComment({
+      owner,
+      repo,
+      comment_id: existingComment.id,
+      body: commentBody,
+    });
+    return;
+  } else {
+    await octokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: prNumber,
       body: commentBody,
     });
   }
+};
 
+const getHumanReadableTimestamp = () => {
+  const options = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  };
+
+  return new Date().toLocaleString("en-US", options as any);
 };
 
 export default run;
