@@ -28,7 +28,7 @@ const run = async (
   if (status.newComponents?.length || status.modifiedComponents?.length) {
     await exec("bit status --strict", [], { cwd: wsdir });
     await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
-    await exec('bit snap -m "CI"', [], { cwd: wsdir });
+    await exec('bit snap -m "CI" --build', [], { cwd: wsdir });
     try {
       await exec(
         `bit lane remove ${org}.${scope}/${laneName} --remote --silent`,
