@@ -31,7 +31,7 @@ const run = async (
     await exec('bit snap -m "CI" --build', [], { cwd: wsdir });
     try {
       await exec(
-        `bit lane remove ${org}.${scope}/${laneName} --remote --silent`,
+        `bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`,
         [],
         { cwd: wsdir }
       );

@@ -10940,7 +10940,7 @@ const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(v
         yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
         yield (0, exec_1.exec)('bit snap -m "CI" --build', [], { cwd: wsdir });
         try {
-            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
+            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`, [], { cwd: wsdir });
         }
         catch (error) {
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
