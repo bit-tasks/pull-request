@@ -10908,6 +10908,29 @@ catch (error) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10920,34 +10943,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
-const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    const org = process.env.ORG;
-    const scope = process.env.SCOPE;
-    let statusRaw = "";
-    const options = {
-        cwd: wsdir,
-        listeners: {
-            stdout: (data) => {
-                statusRaw += data.toString();
-            },
-        },
-    };
-    yield (0, exec_1.exec)("bit status --json", [], options);
-    const status = JSON.parse(statusRaw.trim());
-    if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
-        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
-        yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
-        yield (0, exec_1.exec)('bit snap -m "CI" --build', [], { cwd: wsdir });
-        try {
-            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`, [], { cwd: wsdir });
-        }
-        catch (error) {
-            console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
-        }
-        yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
-        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+const core = __importStar(__nccwpck_require__(2186));
+const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    const octokit = (0, github_1.getOctokit)(githubToken);
+    let messageText = "CI";
+    const { data: pr } = yield octokit.rest.pulls.get({
+        owner: owner,
+        repo: repo,
+        pull_number: prNumber,
+    });
+    const prTitle = pr.title;
+    core.info("PR title: " + prTitle);
+    if (prTitle) {
+        messageText = prTitle;
     }
+    else {
+        const { data: commits } = yield octokit.rest.pulls.listCommits({
+            owner: owner,
+            repo: repo,
+            pull_number: prNumber,
+        });
+        if (commits.length > 0) {
+            messageText = commits[commits.length - 1].commit.message;
+            core.info("Last commit message: " + prTitle);
+        }
+    }
+    core.info("Snap message Text: " + messageText);
+    return messageText;
 });
 const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __awaiter(void 0, void 0, void 0, function* () {
     const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
@@ -10994,6 +11016,36 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
+const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const org = process.env.ORG;
+    const scope = process.env.SCOPE;
+    let statusRaw = "";
+    const options = {
+        cwd: wsdir,
+        listeners: {
+            stdout: (data) => {
+                statusRaw += data.toString();
+            },
+        },
+    };
+    yield (0, exec_1.exec)("bit status --json", [], options);
+    const status = JSON.parse(statusRaw.trim());
+    if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
+        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
+        yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
+        const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
+        yield (0, exec_1.exec)(`bit snap -m "${snapMessageText}" --build`, [], { cwd: wsdir });
+        try {
+            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`, [], { cwd: wsdir });
+        }
+        catch (error) {
+            console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+        }
+        yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
+        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+    }
+});
 exports["default"] = run;
 
 
