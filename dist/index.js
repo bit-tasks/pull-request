@@ -10965,7 +10965,7 @@ const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(
         });
         if (commits.length > 0) {
             messageText = commits[commits.length - 1].commit.message;
-            core.info("Last commit message: " + prTitle);
+            core.info("Last commit message: " + messageText);
         }
     }
     core.info("Snap message Text: " + messageText);

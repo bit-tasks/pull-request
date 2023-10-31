@@ -32,7 +32,7 @@ const createSnapMessageText = async (
 
     if (commits.length > 0) {
       messageText = commits[commits.length - 1].commit.message;
-      core.info("Last commit message: " + prTitle);
+      core.info("Last commit message: " + messageText);
     }
   }
 
