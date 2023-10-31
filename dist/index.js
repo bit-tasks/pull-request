@@ -10877,12 +10877,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
-const fs_1 = __importDefault(__nccwpck_require__(7147));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
@@ -10894,10 +10893,8 @@ try {
     if (!prNumber) {
         throw new Error("Pull Request number is not found");
     }
-    const prAction = (_c = JSON.parse(fs_1.default.readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8"))) === null || _c === void 0 ? void 0 : _c.action; // values: opened, synchronize, closed
-    core.info("PR: " + prAction);
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, prAction, laneName, wsDir);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -10947,11 +10944,82 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
 const core = __importStar(__nccwpck_require__(2186));
-const run = (githubToken, repo, owner, prNumber, prAction, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    const octokit = (0, github_1.getOctokit)(githubToken);
+    let messageText = "CI";
+    const { data: pr } = yield octokit.rest.pulls.get({
+        owner: owner,
+        repo: repo,
+        pull_number: prNumber,
+    });
+    const prTitle = pr.title;
+    core.info("PR title: " + prTitle);
+    if (prTitle) {
+        messageText = prTitle;
+    }
+    else {
+        const { data: commits } = yield octokit.rest.pulls.listCommits({
+            owner: owner,
+            repo: repo,
+            pull_number: prNumber,
+        });
+        if (commits.length > 0) {
+            messageText = commits[commits.length - 1].commit.message;
+            core.info("Last commit message: " + messageText);
+        }
+    }
+    core.info("Snap message Text: " + messageText);
+    return messageText;
+});
+const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __awaiter(void 0, void 0, void 0, function* () {
+    const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+    let commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
+    const octokit = (0, github_1.getOctokit)(githubToken);
+    const comments = yield octokit.rest.issues.listComments({
+        owner,
+        repo,
+        issue_number: prNumber,
+    });
+    const existingComment = comments.data.find((comment) => {
+        var _a, _b;
+        return ((_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes("https://bit.cloud")) &&
+            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === "github-actions[bot]";
+    });
+    if (existingComment) {
+        const updatedBody = `${commentIntro}\n\n_Lane updated: ${getHumanReadableTimestamp()}_`;
+        yield octokit.rest.issues.updateComment({
+            owner,
+            repo,
+            comment_id: existingComment.id,
+            body: updatedBody,
+        });
+    }
+    else {
+        const newBody = `${commentIntro}\n\n_Lane created: ${getHumanReadableTimestamp()}_`;
+        yield octokit.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: prNumber,
+            body: newBody,
+        });
+    }
+});
+const getHumanReadableTimestamp = () => {
+    const options = {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZone: "UTC",
+    };
+    return new Date().toLocaleString("en-US", options) + " UTC";
+};
+const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    let commentBody = "";
     let statusRaw = "";
     const options = {
         cwd: wsdir,
@@ -10966,29 +11034,16 @@ const run = (githubToken, repo, owner, prNumber, prAction, laneName, wsdir) => _
     if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
         yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
         yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
-        yield (0, exec_1.exec)('bit snap -m "CI"', [], { cwd: wsdir });
+        const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
+        yield (0, exec_1.exec)(`bit snap -m "${snapMessageText}" --build`, [], { cwd: wsdir });
         try {
-            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent`, [], { cwd: wsdir });
+            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`, [], { cwd: wsdir });
         }
         catch (error) {
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
         }
         yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
-        const laneLink = `https://new.bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-        commentBody = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
-    }
-    else {
-        commentBody = `No component was added or modified in the pull request!`;
-        core.info(commentBody);
-    }
-    const octokit = (0, github_1.getOctokit)(githubToken);
-    if (prAction === 'opened') {
-        octokit.rest.issues.createComment({
-            owner,
-            repo,
-            issue_number: prNumber,
-            body: commentBody,
-        });
+        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     }
 });
 exports["default"] = run;

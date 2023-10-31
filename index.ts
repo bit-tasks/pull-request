@@ -1,7 +1,6 @@
 import * as core from "@actions/core";
 import { context } from "@actions/github";
 import run from "./scripts/pull-request";
-import fs from "fs";
 
 try {
   const githubToken = process.env.GITHUB_TOKEN;
@@ -16,14 +15,9 @@ try {
   if (!prNumber) {
     throw new Error("Pull Request number is not found");
   }
-
-  const prAction: string = JSON.parse(
-    fs.readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
-  )?.action; // values: opened, synchronize, closed
-  core.info("PR: " + prAction);
   
   const laneName = `pr-${prNumber?.toString()}`;
-  run(githubToken, repo, owner, prNumber, prAction, laneName, wsDir);
+  run(githubToken, repo, owner, prNumber, laneName, wsDir);
 } catch (error) {
   core.setFailed((error as Error).message);
 }
