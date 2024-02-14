@@ -1,0 +1,73 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-typescript:
+    name: TypeScript Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+
+      - name: Install Dependencies
+        id: npm-ci
+        run: npm ci
+
+      - name: Check Format
+        id: npm-format-check
+        run: npm run format:check
+
+      - name: Lint
+        id: npm-lint
+        run: npm run lint
+
+      # - name: Test
+      #   id: npm-ci-test
+      #   run: npm run ci-test
+
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BIT_CLOUD_ACCESS_TOKEN: ${{ secrets.BIT_CLOUD_ACCESS_TOKEN || secrets.BIT_CONFIG_USER_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize Bit
+        uses: bit-tasks/init@v1
+        with:
+            ws-dir: 'test-data'
+
+      - name: Creating a bare scope
+        run: mkdir org.scope-name && cd org.scope-name && bit init --bare
+
+      - name: Start the server and test
+        run: cd org.scope-name && bit start --port 4000 --no-browser & sleep 200 && curl http://localhost:4000 
+
+      - name: Add remote scope
+        run: cd test-data && bit remote add http://localhost:4000   
+
+      - name: Bit Pull Request
+        uses: ./
+        with: 
+          token: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Bit Lanes
+        run: cd test-data && bit lane list --details
