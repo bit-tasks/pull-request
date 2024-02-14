@@ -10884,14 +10884,14 @@ const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
-    const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
+    const wsDir = process.env.WSDIR;
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
-    const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
+    const { owner, repo } = github_1.context.repo;
     if (!githubToken) {
-        throw new Error("GitHub token not found");
+        throw new Error('GitHub token not found');
     }
     if (!prNumber) {
-        throw new Error("Pull Request number is not found");
+        throw new Error('Pull Request number is not found');
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
     (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir);
@@ -10944,46 +10944,52 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
 const core = __importStar(__nccwpck_require__(2186));
+/**
+ *
+ */
 const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
     const octokit = (0, github_1.getOctokit)(githubToken);
-    let messageText = "CI";
+    let messageText = 'CI';
     const { data: pr } = yield octokit.rest.pulls.get({
-        owner: owner,
-        repo: repo,
-        pull_number: prNumber,
+        owner,
+        repo,
+        pull_number: prNumber
     });
     const prTitle = pr.title;
-    core.info("PR title: " + prTitle);
+    core.info(`PR title: ${prTitle}`);
     if (prTitle) {
         messageText = prTitle;
     }
     else {
         const { data: commits } = yield octokit.rest.pulls.listCommits({
-            owner: owner,
-            repo: repo,
-            pull_number: prNumber,
+            owner,
+            repo,
+            pull_number: prNumber
         });
         if (commits.length > 0) {
             messageText = commits[commits.length - 1].commit.message;
-            core.info("Last commit message: " + messageText);
+            core.info(`Last commit message: ${messageText}`);
         }
     }
-    core.info("Snap message Text: " + messageText);
+    core.info(`Snap message Text: ${messageText}`);
     return messageText;
 });
+/**
+ *
+ */
 const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __awaiter(void 0, void 0, void 0, function* () {
     const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
-    let commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
+    const commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
     const octokit = (0, github_1.getOctokit)(githubToken);
     const comments = yield octokit.rest.issues.listComments({
         owner,
         repo,
-        issue_number: prNumber,
+        issue_number: prNumber
     });
-    const existingComment = comments.data.find((comment) => {
+    const existingComment = comments.data.find(comment => {
         var _a, _b;
-        return ((_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes("https://bit.cloud")) &&
-            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === "github-actions[bot]";
+        return ((_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes('https://bit.cloud')) &&
+            ((_b = comment.user) === null || _b === void 0 ? void 0 : _b.login) === 'github-actions[bot]';
     });
     if (existingComment) {
         const updatedBody = `${commentIntro}\n\n_Lane updated: ${getHumanReadableTimestamp()}_`;
@@ -10991,7 +10997,7 @@ const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __
             owner,
             repo,
             comment_id: existingComment.id,
-            body: updatedBody,
+            body: updatedBody
         });
     }
     else {
@@ -11000,39 +11006,46 @@ const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __
             owner,
             repo,
             issue_number: prNumber,
-            body: newBody,
+            body: newBody
         });
     }
 });
+/**
+ *
+ */
 const getHumanReadableTimestamp = () => {
     const options = {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        timeZone: "UTC",
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'UTC'
     };
-    return new Date().toLocaleString("en-US", options) + " UTC";
+    const date = new Date().toLocaleString('en-US', options);
+    return `${date} UTC`;
 };
+/**
+ *
+ */
 const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    let statusRaw = "";
+    let statusRaw = '';
     const options = {
         cwd: wsdir,
         listeners: {
             stdout: (data) => {
                 statusRaw += data.toString();
-            },
-        },
+            }
+        }
     };
-    yield (0, exec_1.exec)("bit status --json", [], options);
+    yield (0, exec_1.exec)('bit status --json', [], options);
     const status = JSON.parse(statusRaw.trim());
     if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
-        yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit status --strict', [], { cwd: wsdir });
         yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
         yield (0, exec_1.exec)(`bit snap -m "${snapMessageText}" --build`, [], { cwd: wsdir });
@@ -11042,7 +11055,7 @@ const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(v
         catch (error) {
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
         }
-        yield (0, exec_1.exec)("bit export", [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit export', [], { cwd: wsdir });
         postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     }
 });
