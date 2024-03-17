@@ -11035,7 +11035,7 @@ const run = (githubToken, repo, owner, prNumber, laneName, wsdir) => __awaiter(v
         yield (0, exec_1.exec)("bit status --strict", [], { cwd: wsdir });
         yield (0, exec_1.exec)(`bit lane create ${laneName}`, [], { cwd: wsdir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-        yield (0, exec_1.exec)(`bit snap -m "${snapMessageText}" --build`, [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, '--build'], { cwd: wsdir });
         try {
             yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`, [], { cwd: wsdir });
         }
