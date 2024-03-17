@@ -124,7 +124,8 @@ const run = async (
     await exec("bit status --strict", [], { cwd: wsdir });
     await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
     const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
-    await exec(`bit snap -m "${snapMessageText}" --build`, [], { cwd: wsdir });
+    await exec('bit', ['snap', '-m', snapMessageText, '--build'], { cwd: wsdir });
+    
     try {
       await exec(
         `bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`,
