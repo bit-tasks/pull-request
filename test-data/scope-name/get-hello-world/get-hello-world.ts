@@ -1,5 +1,5 @@
 /**
- * returns a string with the message "Hello world!".
+ * returns a string with the message "Hello world!" text.
  */
 
 export function getHelloWorld() {
