@@ -7,6 +7,8 @@ try {
   const wsDir: string = core.getInput("ws-dir") || process.env.WSDIR || "./";
   const prNumber = context?.payload?.pull_request?.number;
   const { owner, repo } = context?.repo;
+  const debug: boolean =
+  core.getInput("debug") === "true" ? true : false;
 
   if (!githubToken) {
     throw new Error("GitHub token not found");
@@ -17,7 +19,7 @@ try {
   }
   
   const laneName = `pr-${prNumber?.toString()}`;
-  run(githubToken, repo, owner, prNumber, laneName, wsDir);
+  run(githubToken, repo, owner, prNumber, laneName, wsDir, debug);
 } catch (error) {
   core.setFailed((error as Error).message);
 }

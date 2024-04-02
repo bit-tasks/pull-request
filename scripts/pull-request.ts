@@ -102,10 +102,12 @@ const run = async (
   owner: string,
   prNumber: number,
   laneName: string,
-  wsdir: string
+  wsdir: string,
+  debug: boolean
 ) => {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
+  const debugFlag = debug? '--debug': '';
 
   let statusRaw = "";
   const options: ExecOptions = {
@@ -121,21 +123,21 @@ const run = async (
   const status = JSON.parse(statusRaw.trim());
 
   if (status.newComponents?.length || status.modifiedComponents?.length) {
-    await exec("bit status --strict", [], { cwd: wsdir });
-    await exec(`bit lane create ${laneName}`, [], { cwd: wsdir });
+    await exec(`bit status --strict ${debugFlag}`, [], { cwd: wsdir });
+    await exec(`bit lane create ${laneName} ${debugFlag}`, [], { cwd: wsdir });
     const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
-    await exec('bit', ['snap', '-m', snapMessageText, '--build'], { cwd: wsdir });
+    await exec('bit', ['snap', '-m', snapMessageText, '--build', debugFlag], { cwd: wsdir });
     
     try {
       await exec(
-        `bit lane remove ${org}.${scope}/${laneName} --remote --silent --force`,
+        `bit lane remove ${org}.${scope}/${laneName} --remote --silent --force ${debugFlag}`,
         [],
         { cwd: wsdir }
       );
     } catch (error) {
       console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
     }
-    await exec("bit export", [], { cwd: wsdir });
+    await exec(`bit export ${debugFlag}`, [], { cwd: wsdir });
 
     postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
   }

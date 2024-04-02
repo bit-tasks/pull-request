@@ -11,6 +11,10 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 **Optional** The workspace directory path from the root. Default `"Dir specified in Init Task or ./"`.
 
+### `debug`
+
+**Optional** Add the parameter to debug all bit commands. Default `"false"`.
+
 ## Example usage
 
 **Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v1`.
