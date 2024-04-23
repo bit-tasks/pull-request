@@ -10885,9 +10885,9 @@ const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
+    const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
-    const debug = core.getInput("debug") === "true" ? true : false;
     if (!githubToken) {
         throw new Error("GitHub token not found");
     }
@@ -10895,7 +10895,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir, debug);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir, args);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11017,34 +11017,33 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const run = (githubToken, repo, owner, prNumber, laneName, wsdir, debug) => __awaiter(void 0, void 0, void 0, function* () {
+const run = (githubToken, repo, owner, prNumber, laneName, wsdir, args) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const org = process.env.ORG;
     const scope = process.env.SCOPE;
-    const debugFlag = debug ? '--debug' : '';
     let statusRaw = "";
-    const options = {
+    yield (0, exec_1.exec)("bit", ['status', '--json'], {
         cwd: wsdir,
         listeners: {
             stdout: (data) => {
                 statusRaw += data.toString();
             },
         },
-    };
-    yield (0, exec_1.exec)("bit status --json", [], options);
+    }); // Avoid log param, since output is parsed for next steps
     const status = JSON.parse(statusRaw.trim());
     if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
-        yield (0, exec_1.exec)(`bit status --strict ${debugFlag}`, [], { cwd: wsdir });
-        yield (0, exec_1.exec)(`bit lane create ${laneName} ${debugFlag}`, [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit', ['status', '--strict', ...args], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsdir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-        yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, '--build', debugFlag], { cwd: wsdir });
+        const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
+        yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsdir });
         try {
-            yield (0, exec_1.exec)(`bit lane remove ${org}.${scope}/${laneName} --remote --silent --force ${debugFlag}`, [], { cwd: wsdir });
+            yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsdir });
         }
         catch (error) {
             console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
         }
-        yield (0, exec_1.exec)(`bit export ${debugFlag}`, [], { cwd: wsdir });
+        yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsdir });
         postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     }
 });
