@@ -1,4 +1,4 @@
-name: Test Bit Pull Request
+name: Test Bit Pull Request with Docker
 on:
   pull_request:
     types:
@@ -9,10 +9,16 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: bitsrc/stable:latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BIT_CONFIG_ACCESS_TOKEN: ${{ secrets.BIT_CONFIG_ACCESS_TOKEN }}
     steps:
+      - name: Create symlink to _w directory
+        run: |
+          mkdir -p /home/runner
+          ln -sfn /__w /home/runner/work
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Initialize Bit

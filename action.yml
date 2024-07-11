@@ -8,5 +8,5 @@ inputs:
     description: "Workspace json file directory path"
     required: false
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
