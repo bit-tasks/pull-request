@@ -11,9 +11,13 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 **Optional** The workspace directory path from the root. Default `"Dir specified in Init Task or ./"`.
 
+### `version-label`
+
+**Optional** When set to true, adds labels to the PR with component versions (e.g., "component-id@1.0.0"). Default `false`. Available in v2+.
+
 ## Example usage
 
-**Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v1`.
+**Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v2`.
 
 ```yaml
 name: Test Bit Pull Request
@@ -40,7 +44,9 @@ jobs:
         with:
           ws-dir: '<WORKSPACE_DIR_PATH>'
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@v1
+        uses: bit-tasks/pull-request@v2
+        with:
+          version-label: true  # Optional: Add version labels to PR
 ```
 
 # Contributor Guide
@@ -55,7 +61,7 @@ Go to the GithHub action task directory and build using NCC compiler. For exampl
 npm install
 npm run build
 git commit -m "Update task"
-git tag -a -m "action release" v1 --force
+git tag -a -m "action release" v2 --force
 git push --follow-tags
 ```
 

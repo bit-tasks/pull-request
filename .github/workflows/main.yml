@@ -1,9 +1,9 @@
 name: Test Bit Pull Request
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
+    # types:
+    #   - opened
+    #   - synchronize
 permissions:
   pull-requests: write
 jobs:
