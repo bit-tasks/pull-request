@@ -101,30 +101,16 @@ const createVersionLabels = async (
   repo: string,
   owner: string,
   prNumber: number,
-  wsDir: string,
-  args: string[]
+  status: any
 ) => {
-  core.info("Getting components to create version labels");
-  
-  // Get status
-  let statusRaw = "";
-  await exec("bit", ['status', '--json'], {
-    cwd: wsDir,
-    listeners: {
-      stdout: (data: Buffer) => {
-        statusRaw += data.toString();
-      },
-    },
-  });
-
-  const status = JSON.parse(statusRaw.trim());
+  core.info("Creating version labels for new and modified components");
   
   // Create version labels array from new and modified components
   const versionLabels = [
     ...(status.newComponents || []),
     ...(status.modifiedComponents || [])
-  ].map((component: any) => {
-    const label = `${component.id}@inherit`;
+  ].map((componentId: string) => {
+    const label = `${componentId}@inherit`;
     core.info(`Creating label: ${label}`);
     return label;
   });
@@ -139,7 +125,7 @@ const createVersionLabels = async (
         owner,
         repo,
         name: label,
-        color: "0366d6",
+        color: "6f42c1",
       });
     } catch (error: any) {
       if (error.status !== 422) {
@@ -164,7 +150,7 @@ export default async function run(
   owner: string,
   prNumber: number,
   laneName: string,
-  versionLabels: boolean,
+  versionLabel: boolean,
   wsDir: string,
   args: string[]
 ) {
@@ -184,26 +170,22 @@ export default async function run(
 
   const status = JSON.parse(statusRaw.trim());
 
-  if (status.newComponents?.length || status.modifiedComponents?.length) {
-    await exec('bit', ['status', '--strict', ...args], { cwd: wsDir });
-
-    if (versionLabels) {
-      await createVersionLabels(githubToken, repo, owner, prNumber, wsDir, args);
-    }
-
-    await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
-    const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
-
-    const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
-    await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
-    
-    try {
-      await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
-    } catch (error) {
-      console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
-    }
-    await exec('bit', ['export', ...args], { cwd: wsDir });
-
-    postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+  if (versionLabel) {
+    await createVersionLabels(githubToken, repo, owner, prNumber, status);
   }
+
+  await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
+  const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
+
+  const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
+  await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
+  
+  try {
+    await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
+  } catch (error) {
+    console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+  }
+  await exec('bit', ['export', ...args], { cwd: wsDir });
+
+  postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
 };

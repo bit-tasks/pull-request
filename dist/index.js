@@ -11018,25 +11018,14 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info("Getting components to create version labels");
-    // Get status
-    let statusRaw = "";
-    yield (0, exec_1.exec)("bit", ['status', '--json'], {
-        cwd: wsDir,
-        listeners: {
-            stdout: (data) => {
-                statusRaw += data.toString();
-            },
-        },
-    });
-    const status = JSON.parse(statusRaw.trim());
+const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info("Creating version labels for new and modified components");
     // Create version labels array from new and modified components
     const versionLabels = [
         ...(status.newComponents || []),
         ...(status.modifiedComponents || [])
-    ].map((component) => {
-        const label = `${component.id}@inherit`;
+    ].map((componentId) => {
+        const label = `${componentId}@inherit`;
         core.info(`Creating label: ${label}`);
         return label;
     });
@@ -11049,7 +11038,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
                 owner,
                 repo,
                 name: label,
-                color: "0366d6",
+                color: "6f42c1",
             });
         }
         catch (error) {
@@ -11067,8 +11056,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
         });
     }
 });
-function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args) {
-    var _a, _b;
+function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args) {
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
         const scope = process.env.SCOPE;
@@ -11082,24 +11070,21 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir,
             },
         }); // Avoid log param, since output is parsed for next steps
         const status = JSON.parse(statusRaw.trim());
-        if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
-            yield (0, exec_1.exec)('bit', ['status', '--strict', ...args], { cwd: wsDir });
-            if (versionLabels) {
-                yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir, args);
-            }
-            yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
-            const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-            const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
-            yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
-            try {
-                yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
-            }
-            catch (error) {
-                console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
-            }
-            yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
-            postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+        if (versionLabel) {
+            yield createVersionLabels(githubToken, repo, owner, prNumber, status);
         }
+        yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
+        const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
+        const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
+        yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
+        try {
+            yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
+        }
+        catch (error) {
+            console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+        }
+        yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
+        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     });
 }
 exports["default"] = run;
