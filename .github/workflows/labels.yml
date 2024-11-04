@@ -29,5 +29,3 @@ jobs:
         uses: bit-tasks/pull-request@main
         with:
           version-labels: true
-      - name: Bit Lanes
-        run: cd test-data && bit lane list --details
