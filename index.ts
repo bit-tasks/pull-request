@@ -10,6 +10,10 @@ try {
   const prNumber = context?.payload?.pull_request?.number;
   const { owner, repo } = context?.repo;
 
+  if(versionLabel) {
+    console.log("Version label is true");
+  }
+
   if (!githubToken) {
     throw new Error("GitHub token not found");
   }
