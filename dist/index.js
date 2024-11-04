@@ -11099,6 +11099,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir,
             yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
             postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
             if (versionLabels) {
+                yield (0, exec_1.exec)('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
                 yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
             }
         }

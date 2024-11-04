@@ -202,6 +202,7 @@ export default async function run(
 
     postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     if (versionLabels) {
+      await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
       await createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
     }
   }
