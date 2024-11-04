@@ -11022,7 +11022,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir) => __awa
     var _a;
     core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
     // Run bit tag command with wsDir
-    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
+    // await exec('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
     // Get status after tagging with wsDir
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
@@ -11090,6 +11090,10 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir,
             const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
             const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
             yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
+            if (versionLabels) {
+                // await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
+                yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
+            }
             try {
                 yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
             }
@@ -11098,10 +11102,6 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir,
             }
             yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
             postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
-            if (versionLabels) {
-                yield (0, exec_1.exec)('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
-                yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
-            }
         }
     });
 }

@@ -106,7 +106,7 @@ const createVersionLabels = async (
   core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
   
   // Run bit tag command with wsDir
-  await exec('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
+  // await exec('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
   
   // Get status after tagging with wsDir
   let statusRaw = "";
@@ -193,6 +193,11 @@ export default async function run(
     const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
     await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
     
+    if (versionLabels) {
+      // await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
+      await createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
+    }
+    
     try {
       await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
     } catch (error) {
@@ -201,9 +206,5 @@ export default async function run(
     await exec('bit', ['export', ...args], { cwd: wsDir });
 
     postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
-    if (versionLabels) {
-      await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
-      await createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
-    }
   }
 };
