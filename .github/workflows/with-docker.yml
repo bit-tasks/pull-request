@@ -1,9 +1,10 @@
 name: Test Bit Pull Request with Docker
 on:
-  pull_request:
-    # types:
-    #   - opened
-    #   - synchronize
+  workflow_dispatch:   # Manual trigger
+  # pull_request:
+  #   types:
+  #     - opened
+  #     - synchronize
 permissions:
   pull-requests: write
 jobs:
