@@ -11018,11 +11018,11 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir) => __awaiter(void 0, void 0, void 0, function* () {
+const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
     // Run bit tag command with wsDir
-    // await exec('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
+    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get versions', ...args], { cwd: wsDir });
     // Get status after tagging with wsDir
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
@@ -11068,6 +11068,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir) => __awa
             labels: [label],
         });
     }
+    yield (0, exec_1.exec)('bit', ['reset', '--all', ...args], { cwd: wsDir });
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args) {
     var _a, _b;
@@ -11086,14 +11087,13 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir,
         const status = JSON.parse(statusRaw.trim());
         if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
             yield (0, exec_1.exec)('bit', ['status', '--strict', ...args], { cwd: wsDir });
+            if (versionLabels) {
+                yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir, args);
+            }
             yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
             const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
             const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
             yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
-            if (versionLabels) {
-                // await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
-                yield createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
-            }
             try {
                 yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
             }

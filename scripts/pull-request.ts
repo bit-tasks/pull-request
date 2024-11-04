@@ -102,11 +102,12 @@ const createVersionLabels = async (
   owner: string,
   prNumber: number,
   wsDir: string,
+  args: string[]
 ) => {
   core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
   
   // Run bit tag command with wsDir
-  // await exec('bit', ['tag', '-m', 'tagging to get versions'], { cwd: wsDir });
+  await exec('bit', ['tag', '-m', 'tagging to get versions', ...args], { cwd: wsDir });
   
   // Get status after tagging with wsDir
   let statusRaw = "";
@@ -157,6 +158,7 @@ const createVersionLabels = async (
       labels: [label],
     });
   }
+  await exec('bit', ['reset', '--all', ...args], { cwd: wsDir });
 };
 
 export default async function run(
@@ -187,16 +189,16 @@ export default async function run(
 
   if (status.newComponents?.length || status.modifiedComponents?.length) {
     await exec('bit', ['status', '--strict', ...args], { cwd: wsDir });
+
+    if (versionLabels) {
+      await createVersionLabels(githubToken, repo, owner, prNumber, wsDir, args);
+    }
+
     await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
     const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
 
     const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
     await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
-    
-    if (versionLabels) {
-      // await exec('bit', ['lane', 'switch', 'main', ...args], { cwd: wsDir });
-      await createVersionLabels(githubToken, repo, owner, prNumber, wsDir);
-    }
     
     try {
       await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
