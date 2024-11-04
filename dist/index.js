@@ -11019,8 +11019,8 @@ const getHumanReadableTimestamp = () => {
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
 const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    // Get status after tagging with wsDir
+    core.info("Getting components to create version labels");
+    // Get status
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
         cwd: wsDir,
@@ -11031,14 +11031,15 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
         },
     });
     const status = JSON.parse(statusRaw.trim());
-    // Create version labels array
-    const versionLabels = ((_a = status.stagedComponents) === null || _a === void 0 ? void 0 : _a.map((component) => {
-        const versions = component.versions;
-        const latestVersion = versions[versions.length - 1];
-        const label = `${component.id}@${latestVersion}`;
+    // Create version labels array from new and modified components
+    const versionLabels = [
+        ...(status.newComponents || []),
+        ...(status.modifiedComponents || [])
+    ].map((component) => {
+        const label = `${component.id}@inherit`;
         core.info(`Creating label: ${label}`);
         return label;
-    })) || [];
+    });
     // Create GitHub labels
     const octokit = (0, github_1.getOctokit)(githubToken);
     for (const label of versionLabels) {
@@ -11048,7 +11049,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
                 owner,
                 repo,
                 name: label,
-                color: "6c5ce7)",
+                color: "0366d6",
             });
         }
         catch (error) {

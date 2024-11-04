@@ -104,7 +104,9 @@ const createVersionLabels = async (
   wsDir: string,
   args: string[]
 ) => {
-  // Get status after tagging with wsDir
+  core.info("Getting components to create version labels");
+  
+  // Get status
   let statusRaw = "";
   await exec("bit", ['status', '--json'], {
     cwd: wsDir,
@@ -117,14 +119,15 @@ const createVersionLabels = async (
 
   const status = JSON.parse(statusRaw.trim());
   
-  // Create version labels array
-  const versionLabels = status.stagedComponents?.map((component: any) => {
-    const versions = component.versions;
-    const latestVersion = versions[versions.length - 1];
-    const label = `${component.id}@${latestVersion}`;
+  // Create version labels array from new and modified components
+  const versionLabels = [
+    ...(status.newComponents || []),
+    ...(status.modifiedComponents || [])
+  ].map((component: any) => {
+    const label = `${component.id}@inherit`;
     core.info(`Creating label: ${label}`);
     return label;
-  }) || [];
+  });
 
   // Create GitHub labels
   const octokit = getOctokit(githubToken);
@@ -136,7 +139,7 @@ const createVersionLabels = async (
         owner,
         repo,
         name: label,
-        color: "6c5ce7)",
+        color: "0366d6",
       });
     } catch (error: any) {
       if (error.status !== 422) {
