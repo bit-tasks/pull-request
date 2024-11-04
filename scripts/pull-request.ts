@@ -104,11 +104,6 @@ const createVersionLabels = async (
   wsDir: string,
   args: string[]
 ) => {
-  core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
-  
-  // Run bit tag command with wsDir
-  await exec('bit', ['tag', '-m', 'tagging to get versions', ...args], { cwd: wsDir });
-  
   // Get status after tagging with wsDir
   let statusRaw = "";
   await exec("bit", ['status', '--json'], {
@@ -141,7 +136,7 @@ const createVersionLabels = async (
         owner,
         repo,
         name: label,
-        color: "0366d6",
+        color: "6c5ce7)",
       });
     } catch (error: any) {
       if (error.status !== 422) {
@@ -158,7 +153,6 @@ const createVersionLabels = async (
       labels: [label],
     });
   }
-  await exec('bit', ['reset', '--all', ...args], { cwd: wsDir });
 };
 
 export default async function run(

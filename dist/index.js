@@ -11020,9 +11020,6 @@ const getHumanReadableTimestamp = () => {
 };
 const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
-    // Run bit tag command with wsDir
-    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get versions', ...args], { cwd: wsDir });
     // Get status after tagging with wsDir
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
@@ -11051,7 +11048,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
                 owner,
                 repo,
                 name: label,
-                color: "0366d6",
+                color: "6c5ce7)",
             });
         }
         catch (error) {
@@ -11068,7 +11065,6 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, wsDir, args) =>
             labels: [label],
         });
     }
-    yield (0, exec_1.exec)('bit', ['reset', '--all', ...args], { cwd: wsDir });
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args) {
     var _a, _b;
