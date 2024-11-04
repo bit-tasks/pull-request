@@ -10851,46 +10851,23 @@ function wrappy (fn, cb) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
+const core_1 = __importDefault(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
-    const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
-    const versionLabel = core.getInput("version-label") === "true" ? true : false;
+    const wsDir = core_1.default.getInput("ws-dir") || process.env.WSDIR || "./";
+    const versionLabel = core_1.default.getInput("version-label") === "true" ? true : false;
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
     if (versionLabel) {
-        console.log("Version label is true");
+        core_1.default.info("Version label is true");
     }
     if (!githubToken) {
         throw new Error("GitHub token not found");
@@ -10902,7 +10879,7 @@ try {
     (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args);
 }
 catch (error) {
-    core.setFailed(error.message);
+    core_1.default.setFailed(error.message);
 }
 
 
@@ -10913,29 +10890,6 @@ catch (error) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10945,10 +10899,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
-const core = __importStar(__nccwpck_require__(2186));
+const core_1 = __importDefault(__nccwpck_require__(2186));
 const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
     const octokit = (0, github_1.getOctokit)(githubToken);
     let messageText = "CI";
@@ -10958,7 +10915,7 @@ const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(
         pull_number: prNumber,
     });
     const prTitle = pr.title;
-    core.info("PR title: " + prTitle);
+    core_1.default.info("PR title: " + prTitle);
     if (prTitle) {
         messageText = prTitle;
     }
@@ -10970,10 +10927,10 @@ const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(
         });
         if (commits.length > 0) {
             messageText = commits[commits.length - 1].commit.message;
-            core.info("Last commit message: " + messageText);
+            core_1.default.info("Last commit message: " + messageText);
         }
     }
-    core.info("Snap message Text: " + messageText);
+    core_1.default.info("Snap message Text: " + messageText);
     return messageText;
 });
 const postOrUpdateComment = (githubToken, repo, owner, prNumber, laneName) => __awaiter(void 0, void 0, void 0, function* () {
@@ -11023,9 +10980,9 @@ const getHumanReadableTimestamp = () => {
 };
 const createVersionLabels = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    console.log("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
+    core_1.default.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
     // Run bit tag command
-    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get version bumps']);
+    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get versions']);
     // Get status after tagging
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
@@ -11040,26 +10997,29 @@ const createVersionLabels = (githubToken, repo, owner, prNumber) => __awaiter(vo
     const versionLabels = ((_a = status.stagedComponents) === null || _a === void 0 ? void 0 : _a.map((component) => {
         const versions = component.versions;
         const latestVersion = versions[versions.length - 1];
-        return `${component.id}@${latestVersion}`;
+        const label = `${component.id}@${latestVersion}`;
+        core_1.default.info(`Creating label: ${label}`);
+        return label;
     })) || [];
     // Create GitHub labels
     const octokit = (0, github_1.getOctokit)(githubToken);
     for (const label of versionLabels) {
         try {
+            core_1.default.info(`Creating GitHub label: ${label}`);
             yield octokit.rest.issues.createLabel({
                 owner,
                 repo,
                 name: label,
-                color: "0366d6", // GitHub blue color
+                color: "0366d6",
             });
         }
         catch (error) {
-            // If label already exists, ignore the error
             if (error.status !== 422) {
                 throw error;
             }
+            core_1.default.info(`Label ${label} already exists`);
         }
-        // Add label to PR
+        core_1.default.info(`Adding label ${label} to PR #${prNumber}`);
         yield octokit.rest.issues.addLabels({
             owner,
             repo,

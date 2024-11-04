@@ -1,4 +1,4 @@
-import * as core from "@actions/core";
+import core from "@actions/core";
 import { context } from "@actions/github";
 import run from "./scripts/pull-request";
 
@@ -11,7 +11,7 @@ try {
   const { owner, repo } = context?.repo;
 
   if(versionLabel) {
-    console.log("Version label is true");
+    core.info("Version label is true");
   }
 
   if (!githubToken) {

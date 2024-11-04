@@ -1,6 +1,6 @@
-import { exec, ExecOptions } from "@actions/exec";
+import { exec } from "@actions/exec";
 import { getOctokit } from "@actions/github";
-import * as core from "@actions/core";
+import core from "@actions/core";
 
 const createSnapMessageText = async (
   githubToken: string,
@@ -102,10 +102,10 @@ const createVersionLabels = async (
   owner: string,
   prNumber: number,
 ) => {
-  console.log("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
+  core.info("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
   
   // Run bit tag command
-  await exec('bit', ['tag', '-m', 'tagging to get version bumps']);
+  await exec('bit', ['tag', '-m', 'tagging to get versions']);
   
   // Get status after tagging
   let statusRaw = "";
@@ -123,7 +123,9 @@ const createVersionLabels = async (
   const versionLabels = status.stagedComponents?.map((component: any) => {
     const versions = component.versions;
     const latestVersion = versions[versions.length - 1];
-    return `${component.id}@${latestVersion}`;
+    const label = `${component.id}@${latestVersion}`;
+    core.info(`Creating label: ${label}`);
+    return label;
   }) || [];
 
   // Create GitHub labels
@@ -131,20 +133,21 @@ const createVersionLabels = async (
   
   for (const label of versionLabels) {
     try {
+      core.info(`Creating GitHub label: ${label}`);
       await octokit.rest.issues.createLabel({
         owner,
         repo,
         name: label,
-        color: "0366d6", // GitHub blue color
+        color: "0366d6",
       });
     } catch (error: any) {
-      // If label already exists, ignore the error
       if (error.status !== 422) {
         throw error;
       }
+      core.info(`Label ${label} already exists`);
     }
 
-    // Add label to PR
+    core.info(`Adding label ${label} to PR #${prNumber}`);
     await octokit.rest.issues.addLabels({
       owner,
       repo,
