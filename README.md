@@ -11,7 +11,7 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 **Optional** The workspace directory path from the root. Default `"Dir specified in Init Task or ./"`.
 
-### `version-label`
+### `version-labels`
 
 **Optional** When set to true, adds labels to the PR with component versions (e.g., "component-id@1.0.0"). Default `false`. Available in v2+.
 

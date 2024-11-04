@@ -10885,13 +10885,10 @@ const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
-    const versionLabel = core.getInput("version-label") === "true" ? true : false;
+    const versionLabels = core.getInput("version-labels") === "true" ? true : false;
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
-    if (versionLabel) {
-        core.info("Version label is true");
-    }
     if (!githubToken) {
         throw new Error("GitHub token not found");
     }
@@ -10899,7 +10896,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11071,7 +11068,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber) => __awaiter(vo
         });
     }
 });
-function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args) {
+function run(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
@@ -11100,7 +11097,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, 
             }
             yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
             postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
-            if (versionLabel) {
+            if (versionLabels) {
                 yield createVersionLabels(githubToken, repo, owner, prNumber);
             }
         }

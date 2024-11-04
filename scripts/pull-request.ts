@@ -163,7 +163,7 @@ export default async function run(
   owner: string,
   prNumber: number,
   laneName: string,
-  versionLabel: boolean,
+  versionLabels: boolean,
   wsDir: string,
   args: string[]
 ) {
@@ -199,7 +199,7 @@ export default async function run(
     await exec('bit', ['export', ...args], { cwd: wsDir });
 
     postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
-    if (versionLabel) {
+    if (versionLabels) {
       await createVersionLabels(githubToken, repo, owner, prNumber);
     }
   }
