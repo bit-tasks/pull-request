@@ -1,6 +1,6 @@
 import { exec } from "@actions/exec";
 import { getOctokit } from "@actions/github";
-import core from "@actions/core";
+import * as core from "@actions/core";
 
 const createSnapMessageText = async (
   githubToken: string,
