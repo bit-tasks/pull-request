@@ -96,22 +96,81 @@ const getHumanReadableTimestamp = () => {
   return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
-const run = async (
+const createVersionLabels = async (
+  githubToken: string,
+  repo: string,
+  owner: string,
+  prNumber: number,
+) => {
+  console.log("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
+  
+  // Run bit tag command
+  await exec('bit', ['tag', '-m', 'tagging to get version bumps']);
+  
+  // Get status after tagging
+  let statusRaw = "";
+  await exec("bit", ['status', '--json'], {
+    listeners: {
+      stdout: (data: Buffer) => {
+        statusRaw += data.toString();
+      },
+    },
+  });
+
+  const status = JSON.parse(statusRaw.trim());
+  
+  // Create version labels array
+  const versionLabels = status.stagedComponents?.map((component: any) => {
+    const versions = component.versions;
+    const latestVersion = versions[versions.length - 1];
+    return `${component.id}@${latestVersion}`;
+  }) || [];
+
+  // Create GitHub labels
+  const octokit = getOctokit(githubToken);
+  
+  for (const label of versionLabels) {
+    try {
+      await octokit.rest.issues.createLabel({
+        owner,
+        repo,
+        name: label,
+        color: "0366d6", // GitHub blue color
+      });
+    } catch (error: any) {
+      // If label already exists, ignore the error
+      if (error.status !== 422) {
+        throw error;
+      }
+    }
+
+    // Add label to PR
+    await octokit.rest.issues.addLabels({
+      owner,
+      repo,
+      issue_number: prNumber,
+      labels: [label],
+    });
+  }
+};
+
+export default async function run(
   githubToken: string,
   repo: string,
   owner: string,
   prNumber: number,
   laneName: string,
-  wsdir: string,
+  versionLabel: boolean,
+  wsDir: string,
   args: string[]
-) => {
+) {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
 
   let statusRaw = "";
 
   await exec("bit", ['status', '--json'], {
-    cwd: wsdir,
+    cwd: wsDir,
     listeners: {
       stdout: (data: Buffer) => {
         statusRaw += data.toString();
@@ -122,22 +181,23 @@ const run = async (
   const status = JSON.parse(statusRaw.trim());
 
   if (status.newComponents?.length || status.modifiedComponents?.length) {
-    await exec('bit', ['status', '--strict', ...args], { cwd: wsdir });
-    await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsdir });
+    await exec('bit', ['status', '--strict', ...args], { cwd: wsDir });
+    await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
     const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
 
     const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
-    await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsdir });
+    await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
     
     try {
-      await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsdir });
+      await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
     } catch (error) {
       console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
     }
-    await exec('bit', ['export', ...args], { cwd: wsdir });
+    await exec('bit', ['export', ...args], { cwd: wsDir });
 
     postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+    if (versionLabel) {
+      await createVersionLabels(githubToken, repo, owner, prNumber);
+    }
   }
 };
-
-export default run;

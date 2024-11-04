@@ -5,7 +5,8 @@ import run from "./scripts/pull-request";
 try {
   const githubToken = process.env.GITHUB_TOKEN;
   const wsDir: string = core.getInput("ws-dir") || process.env.WSDIR || "./";
-  const args = process.env.LOG? [`--log=${process.env.LOG}`]: [];
+  const versionLabel: boolean = core.getInput("version-label") === "true" ? true : false;
+  const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
   const prNumber = context?.payload?.pull_request?.number;
   const { owner, repo } = context?.repo;
 
@@ -16,9 +17,9 @@ try {
   if (!prNumber) {
     throw new Error("Pull Request number is not found");
   }
-  
+
   const laneName = `pr-${prNumber?.toString()}`;
-  run(githubToken, repo, owner, prNumber, laneName, wsDir, args);
+  run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args);
 } catch (error) {
   core.setFailed((error as Error).message);
 }
