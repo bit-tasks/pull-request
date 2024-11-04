@@ -3,7 +3,7 @@ import cx from 'classnames';
 
 export type ButtonProps = {
   /**
-   * sets the component children.
+   * sets the component children
    */
   children?: ReactNode;
   className?: string;
