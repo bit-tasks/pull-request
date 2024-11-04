@@ -1,7 +1,7 @@
 /**
  * this is the main configuration file of your bit workspace.
  * for full documentation, please see: https://bit.dev/reference/workspace/workspace-json
- **/ {
+ **/{
   "$schema": "https://static.bit.dev/teambit/schemas/schema.json",
   /**
    * main configuration of the Bit workspace.
@@ -27,20 +27,20 @@
     /**
      * default scope for all components in workspace.
      **/
-    "defaultScope": "my-org.my-scope",
+    "defaultScope": "bit-tasks.test-scope",
     "resolveAspectsFromNodeModules": true,
     "resolveEnvsFromRoots": true
   },
   /**
-   * Enable generator templates by uncommenting the desired environments below.
-   * These generators scaffold components for Node, React, Vue, and Angular.
-   * After uncommenting, run `bit install` to make them available in your workspace.
-   * Explore more dev environments at: https://bit.dev/docs/getting-started/composing/dev-environments
-   **/
+  * Enable generator templates by uncommenting the desired environments below.
+  * These generators scaffold components for Node, React, Vue, and Angular.
+  * After uncommenting, run `bit install` to make them available in your workspace.
+  * Explore more dev environments at: https://bit.dev/docs/getting-started/composing/dev-environments
+  **/
   "teambit.generator/generator": {
     "envs": [
-      "bitdev.node/node-env",
-      "bitdev.react/react-env"
+      //  "bitdev.node/node-env",
+      //  "bitdev.react/react-env",
       //  "bitdev.vue/vue-env",
       //  "bitdev.angular/angular-env"
     ]
@@ -55,8 +55,13 @@
     "packageManager": "teambit.dependencies/pnpm",
     "policy": {
       "dependencies": {
-        "classnames": "^1.2.1",
-        "lodash": "~4.16.4"
+        "@bitdev/react.app-types.vite-react": "^2.1.2",
+        "@learnbit/hello-world.get-hello-world": "^0.0.15",
+        "@learnbit/hello-world.ui.hello-world": "^0.0.19",
+        "@teambit/node.node": "^1.0.101",
+        "@teambit/react.apps.react-app-types": "^2.0.5",
+        "@teambit/react.react-env": "^1.0.109",
+        "@vitejs/plugin-react": "^4.3.2"
       },
       "peerDependencies": {}
     },
@@ -65,5 +70,6 @@
   },
   "teambit.workspace/workspace-config-files": {
     "enableWorkspaceConfigWrite": true
-  }
+  },
+  "bit-tasks.test-scope/apps/my-app": {}
 }

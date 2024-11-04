@@ -9,26 +9,26 @@
  */
 
 {
-    "button": {
-        "name": "button",
-        "scope": "",
-        "version": "",
-        "defaultScope": "my-org.my-scope",
+    "apps/my-app": {
+        "name": "apps/my-app",
+        "scope": "bit-tasks.test-scope",
+        "version": "0.0.3",
         "mainFile": "index.ts",
-        "rootDir": "my-scope/button",
-        "config": {
-            "bitdev.react/react-env@2.1.5": {},
-            "teambit.envs/envs": {
-                "env": "bitdev.react/react-env"
-            }
-        }
+        "rootDir": "test-scope/apps/my-app"
     },
-    "constants/links": {
-        "name": "constants/links",
-        "scope": "teambit.community",
-        "version": "0.0.8",
+    "get-hello-world": {
+        "name": "get-hello-world",
+        "scope": "bit-tasks.test-scope",
+        "version": "0.0.2",
         "mainFile": "index.ts",
-        "rootDir": "community/constants/links"
+        "rootDir": "test-scope/get-hello-world"
+    },
+    "ui/hello-world": {
+        "name": "ui/hello-world",
+        "scope": "bit-tasks.test-scope",
+        "version": "0.0.4",
+        "mainFile": "index.ts",
+        "rootDir": "test-scope/ui/hello-world"
     },
     "$schema-version": "17.0.0"
 }
