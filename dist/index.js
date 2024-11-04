@@ -10885,6 +10885,7 @@ const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
+    const versionLabel = core.getInput("version-label") === "true" ? true : false;
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
@@ -10895,7 +10896,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir, args);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11017,37 +11018,90 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const run = (githubToken, repo, owner, prNumber, laneName, wsdir, args) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    const org = process.env.ORG;
-    const scope = process.env.SCOPE;
+const createVersionLabels = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    console.log("Tagging to get the sem version bumps. Note: This task won't export these tags to bit.cloud");
+    // Run bit tag command
+    yield (0, exec_1.exec)('bit', ['tag', '-m', 'tagging to get version bumps']);
+    // Get status after tagging
     let statusRaw = "";
     yield (0, exec_1.exec)("bit", ['status', '--json'], {
-        cwd: wsdir,
         listeners: {
             stdout: (data) => {
                 statusRaw += data.toString();
             },
         },
-    }); // Avoid log param, since output is parsed for next steps
+    });
     const status = JSON.parse(statusRaw.trim());
-    if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
-        yield (0, exec_1.exec)('bit', ['status', '--strict', ...args], { cwd: wsdir });
-        yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsdir });
-        const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-        const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
-        yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsdir });
+    // Create version labels array
+    const versionLabels = ((_a = status.stagedComponents) === null || _a === void 0 ? void 0 : _a.map((component) => {
+        const versions = component.versions;
+        const latestVersion = versions[versions.length - 1];
+        return `${component.id}@${latestVersion}`;
+    })) || [];
+    // Create GitHub labels
+    const octokit = (0, github_1.getOctokit)(githubToken);
+    for (const label of versionLabels) {
         try {
-            yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsdir });
+            yield octokit.rest.issues.createLabel({
+                owner,
+                repo,
+                name: label,
+                color: "0366d6", // GitHub blue color
+            });
         }
         catch (error) {
-            console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+            // If label already exists, ignore the error
+            if (error.status !== 422) {
+                throw error;
+            }
         }
-        yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsdir });
-        postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+        // Add label to PR
+        yield octokit.rest.issues.addLabels({
+            owner,
+            repo,
+            issue_number: prNumber,
+            labels: [label],
+        });
     }
 });
+function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        const org = process.env.ORG;
+        const scope = process.env.SCOPE;
+        let statusRaw = "";
+        yield (0, exec_1.exec)("bit", ['status', '--json'], {
+            cwd: wsDir,
+            listeners: {
+                stdout: (data) => {
+                    statusRaw += data.toString();
+                },
+            },
+        }); // Avoid log param, since output is parsed for next steps
+        const status = JSON.parse(statusRaw.trim());
+        if (((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || ((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length)) {
+            yield (0, exec_1.exec)('bit', ['status', '--strict', ...args], { cwd: wsDir });
+            yield (0, exec_1.exec)('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
+            const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
+            const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
+            yield (0, exec_1.exec)('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
+            try {
+                yield (0, exec_1.exec)('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
+            }
+            catch (error) {
+                console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+            }
+            yield (0, exec_1.exec)('bit', ['export', ...args], { cwd: wsDir });
+            postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+            if (versionLabel) {
+                yield createVersionLabels(githubToken, repo, owner, prNumber);
+            }
+        }
+    });
+}
 exports["default"] = run;
+;
 
 
 /***/ }),
