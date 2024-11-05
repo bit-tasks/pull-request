@@ -110,7 +110,7 @@ const createVersionLabels = async (
     ...(status.newComponents || []),
     ...(status.modifiedComponents || [])
   ].map((componentId: string) => {
-    const label = `${componentId}@inherit`;
+    const label = `${componentId}@auto`;
     core.info(`Creating label: ${label}`);
     return label;
   });

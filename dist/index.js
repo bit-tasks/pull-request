@@ -11025,7 +11025,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         ...(status.newComponents || []),
         ...(status.modifiedComponents || [])
     ].map((componentId) => {
-        const label = `${componentId}@inherit`;
+        const label = `${componentId}@auto`;
         core.info(`Creating label: ${label}`);
         return label;
     });
