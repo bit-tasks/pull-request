@@ -11019,6 +11019,7 @@ const getHumanReadableTimestamp = () => {
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
 const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     core.info("Creating version labels for new and modified components");
     // Create version labels array from new and modified components
     const versionLabels = [
@@ -11029,6 +11030,17 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         core.info(`Creating label: ${label}`);
         return label;
     });
+    // Check if number of labels exceeds GitHub's limit, keeping a buffer of 10 labels for administration
+    if (versionLabels.length > 90) {
+        core.warning(`
+      Unable to create version labels: Too many components affected (${versionLabels.length}).
+      New components: ${((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || 0}
+      Modified components: ${((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length) || 0}
+      Please manage version bumps globally by adding [major], [minor] or [patch] label for this pull request.
+    `);
+        return;
+    }
+    core.info(`Creating ${versionLabels.length} version labels`);
     // Create GitHub labels
     const octokit = (0, github_1.getOctokit)(githubToken);
     for (const label of versionLabels) {

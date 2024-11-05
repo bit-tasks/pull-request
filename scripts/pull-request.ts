@@ -115,6 +115,19 @@ const createVersionLabels = async (
     return label;
   });
 
+  // Check if number of labels exceeds GitHub's limit, keeping a buffer of 10 labels for administration
+  if (versionLabels.length > 90) {
+    core.warning(`
+      Unable to create version labels: Too many components affected (${versionLabels.length}).
+      New components: ${status.newComponents?.length || 0}
+      Modified components: ${status.modifiedComponents?.length || 0}
+      Please manage version bumps globally by adding [major], [minor] or [patch] label for this pull request.
+    `);
+    return;
+  }
+
+  core.info(`Creating ${versionLabels.length} version labels`);
+  
   // Create GitHub labels
   const octokit = getOctokit(githubToken);
   

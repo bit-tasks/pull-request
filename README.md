@@ -15,9 +15,9 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 **Optional** When set to true, adds labels to the PR with component versions. Default `false`. Available in v2+.
 
-The labels are automatically added in the format `component-id@inherit` for all new and modified components. You can then modify these labels in the PR to control version bumping:
+The labels are automatically added in the format `component-id@auto` for all new and modified components. You can then modify these labels in the PR to control version bumping:
 
-- `org.scope/component@inherit` - Uses the default 'patch' bump or inherits the version bump specified through:
+- `org.scope/component@auto` - Uses the default 'patch' bump or automatically uses the version bump specified through:
   - Pull Request Labels: Use the keyword directly (e.g., `major`) or enclosed within square brackets (e.g., `[major]`)
   - Pull Request or Commit Title: Include the version keyword in square brackets (e.g., `feat: new button [major]`)
 - `org.scope/component@patch` - Forces a patch version bump
@@ -27,7 +27,7 @@ The labels are automatically added in the format `component-id@inherit` for all 
 Supported version keywords are: `major`, `minor`, and `patch`.
 
 Example:
-- Initial auto-added label: `my-org.my-scope/ui/button@inherit`
+- Initial auto-added label: `my-org.my-scope/ui/button@auto`
 - Modified to force minor bump: `my-org.my-scope/ui/button@minor`
 
 ## Example usage
