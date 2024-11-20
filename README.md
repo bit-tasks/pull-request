@@ -61,7 +61,7 @@ jobs:
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@v2
         with:
-          version-label: true  # Optional: Add version labels to PR
+          version-labels: true  # Optional: Add version labels to PR
 ```
 
 # Contributor Guide
