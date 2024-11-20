@@ -123,6 +123,27 @@ const createVersionLabels = async (
     issue_number: prNumber,
   });
 
+  // Define the version pattern
+  const versionPattern = /@(major|minor|patch|auto)$/;
+
+  // Identify labels to remove
+  const labelsToRemove = prLabels
+    .filter(prLabel => versionPattern.test(prLabel.name) && !versionLabels.includes(prLabel.name))
+    .map(prLabel => prLabel.name);
+
+  // Remove labels that match the version pattern and are not in versionLabels
+  if (labelsToRemove.length > 0) {
+    core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.join(', ')}`);
+    for (const label of labelsToRemove) {
+      await octokit.rest.issues.removeLabel({
+        owner,
+        repo,
+        issue_number: prNumber,
+        name: label
+      });
+    }
+  }
+
   // Get all labels in the repository
   const { data: repoLabels } = await octokit.rest.issues.listLabelsForRepo({
     owner,
