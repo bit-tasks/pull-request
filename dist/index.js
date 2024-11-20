@@ -11059,14 +11059,15 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
             }
             core.info(`Label ${label} already exists`);
         }
-        core.info(`Adding label ${label} to PR #${prNumber}`);
-        yield octokit.rest.issues.addLabels({
-            owner,
-            repo,
-            issue_number: prNumber,
-            labels: [label],
-        });
     }
+    // Add all labels to the PR in one call
+    core.info(`Adding labels to PR #${prNumber}`);
+    yield octokit.rest.issues.addLabels({
+        owner,
+        repo,
+        issue_number: prNumber,
+        labels: versionLabels
+    });
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args) {
     return __awaiter(this, void 0, void 0, function* () {

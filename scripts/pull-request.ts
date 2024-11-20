@@ -146,15 +146,16 @@ const createVersionLabels = async (
       }
       core.info(`Label ${label} already exists`);
     }
-
-    core.info(`Adding label ${label} to PR #${prNumber}`);
-    await octokit.rest.issues.addLabels({
-      owner,
-      repo,
-      issue_number: prNumber,
-      labels: [label],
-    });
   }
+
+  // Add all labels to the PR in one call
+  core.info(`Adding labels to PR #${prNumber}`);
+  await octokit.rest.issues.addLabels({
+    owner,
+    repo,
+    issue_number: prNumber,
+    labels: versionLabels
+  });
 };
 
 export default async function run(
