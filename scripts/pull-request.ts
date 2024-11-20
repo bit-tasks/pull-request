@@ -104,11 +104,11 @@ const createVersionLabels = async (
   status: any
 ) => {
   core.info("Creating version labels for new and modified components");
-  
+
   // Create version labels array from new and modified components
   const versionLabels = [
     ...(status.newComponents || []),
-    ...(status.modifiedComponents || [])
+    ...(status.modifiedComponents || []),
   ].map((componentId: string) => {
     const label = `${componentId}@auto`;
     core.info(`Processing label: ${label}`);
@@ -128,18 +128,28 @@ const createVersionLabels = async (
 
   // Identify labels to remove
   const labelsToRemove = prLabels
-    .filter(prLabel => versionPattern.test(prLabel.name) && !versionLabels.includes(prLabel.name))
-    .map(prLabel => prLabel.name);
+    .filter((prLabel) => {
+      return (
+        versionPattern.test(prLabel.name) &&
+        !versionLabels.some(
+          (versionLabel) =>
+            versionLabel.split("@")[0] === prLabel.name.split("@")[0]
+        )
+      );
+    })
+    .map((prLabel) => prLabel.name);
 
   // Remove labels that match the version pattern and are not in versionLabels
   if (labelsToRemove.length > 0) {
-    core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.join(', ')}`);
+    core.info(
+      `Removing labels from PR #${prNumber}: ${labelsToRemove.join(", ")}`
+    );
     for (const label of labelsToRemove) {
       await octokit.rest.issues.removeLabel({
         owner,
         repo,
         issue_number: prNumber,
-        name: label
+        name: label,
       });
     }
   }
@@ -150,14 +160,16 @@ const createVersionLabels = async (
     repo,
   });
 
-  // Determine which labels need to be added to the PR
-  const newLabelsToAdd = versionLabels.filter(label => 
-    !prLabels.some(prLabel => prLabel.name === label) // Labels not on the PR
-  );
+  const newLabelsToAdd = versionLabels.filter((label) => {
+    return !prLabels.some(
+      (existingLabel) =>
+        existingLabel.name.split("@")[0] === label.split("@")[0]
+    );
+  });
 
   // Determine which labels need to be created in the repository
-  const newLabelsToCreate = newLabelsToAdd.filter(label => 
-    !repoLabels.some(repoLabel => repoLabel.name === label) // Labels not in the repository
+  const newLabelsToCreate = newLabelsToAdd.filter(
+    (label) => !repoLabels.some((repoLabel) => repoLabel.name === label) // Labels not in the repository
   );
 
   // Check if adding new labels will exceed the limit
@@ -167,7 +179,9 @@ const createVersionLabels = async (
   if (totalLabelCount > 100) {
     const availableSpace = 100 - currentLabelCount;
     core.warning(`
-      Unable to create version labels: Adding ${newLabelsToAdd.length} labels would exceed the limit of 100.
+      Unable to create version labels: Adding ${
+        newLabelsToAdd.length
+      } labels would exceed the limit of 100.
       You can only add ${availableSpace} more component version labels to this pull request.
       New components: ${status.newComponents?.length || 0}
       Modified components: ${status.modifiedComponents?.length || 0}
@@ -176,8 +190,10 @@ const createVersionLabels = async (
     return;
   }
 
-  core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
-  
+  core.info(
+    `Creating ${newLabelsToCreate.length} new labels in the repository`
+  );
+
   // Create GitHub labels if they do not exist
   for (const label of newLabelsToCreate) {
     try {
@@ -201,7 +217,7 @@ const createVersionLabels = async (
       owner,
       repo,
       issue_number: prNumber,
-      labels: newLabelsToAdd,  // Pass the filtered array of labels
+      labels: newLabelsToAdd, // Pass the filtered array of labels
     });
   } else {
     core.info("No new labels to add to the PR.");

@@ -11024,7 +11024,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
     // Create version labels array from new and modified components
     const versionLabels = [
         ...(status.newComponents || []),
-        ...(status.modifiedComponents || [])
+        ...(status.modifiedComponents || []),
     ].map((componentId) => {
         const label = `${componentId}@auto`;
         core.info(`Processing label: ${label}`);
@@ -11041,17 +11041,20 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
     const versionPattern = /@(major|minor|patch|auto)$/;
     // Identify labels to remove
     const labelsToRemove = prLabels
-        .filter(prLabel => versionPattern.test(prLabel.name) && !versionLabels.includes(prLabel.name))
-        .map(prLabel => prLabel.name);
+        .filter((prLabel) => {
+        return (versionPattern.test(prLabel.name) &&
+            !versionLabels.some((versionLabel) => versionLabel.split("@")[0] === prLabel.name.split("@")[0]));
+    })
+        .map((prLabel) => prLabel.name);
     // Remove labels that match the version pattern and are not in versionLabels
     if (labelsToRemove.length > 0) {
-        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.join(', ')}`);
+        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.join(", ")}`);
         for (const label of labelsToRemove) {
             yield octokit.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number: prNumber,
-                name: label
+                name: label,
             });
         }
     }
@@ -11060,11 +11063,11 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         owner,
         repo,
     });
-    // Determine which labels need to be added to the PR
-    const newLabelsToAdd = versionLabels.filter(label => !prLabels.some(prLabel => prLabel.name === label) // Labels not on the PR
-    );
+    const newLabelsToAdd = versionLabels.filter((label) => {
+        return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === label.split("@")[0]);
+    });
     // Determine which labels need to be created in the repository
-    const newLabelsToCreate = newLabelsToAdd.filter(label => !repoLabels.some(repoLabel => repoLabel.name === label) // Labels not in the repository
+    const newLabelsToCreate = newLabelsToAdd.filter((label) => !repoLabels.some((repoLabel) => repoLabel.name === label) // Labels not in the repository
     );
     // Check if adding new labels will exceed the limit
     const currentLabelCount = prLabels.length;
