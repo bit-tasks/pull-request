@@ -111,14 +111,43 @@ const createVersionLabels = async (
     ...(status.modifiedComponents || [])
   ].map((componentId: string) => {
     const label = `${componentId}@auto`;
-    core.info(`Creating label: ${label}`);
+    core.info(`Processing label: ${label}`);
     return label;
   });
 
-  // Check if number of labels exceeds GitHub's limit, keeping a buffer of 10 labels for administration
-  if (versionLabels.length > 90) {
+  // Get existing labels on the PR
+  const octokit = getOctokit(githubToken);
+  const { data: prLabels } = await octokit.rest.issues.listLabelsOnIssue({
+    owner,
+    repo,
+    issue_number: prNumber,
+  });
+
+  // Get all labels in the repository
+  const { data: repoLabels } = await octokit.rest.issues.listLabelsForRepo({
+    owner,
+    repo,
+  });
+
+  // Determine which labels need to be added to the PR
+  const newLabelsToAdd = versionLabels.filter(label => 
+    !prLabels.some(prLabel => prLabel.name === label) // Labels not on the PR
+  );
+
+  // Determine which labels need to be created in the repository
+  const newLabelsToCreate = newLabelsToAdd.filter(label => 
+    !repoLabels.some(repoLabel => repoLabel.name === label) // Labels not in the repository
+  );
+
+  // Check if adding new labels will exceed the limit
+  const currentLabelCount = prLabels.length;
+  const totalLabelCount = currentLabelCount + newLabelsToAdd.length;
+
+  if (totalLabelCount > 100) {
+    const availableSpace = 100 - currentLabelCount;
     core.warning(`
-      Unable to create version labels: Too many components affected (${versionLabels.length}).
+      Unable to create version labels: Adding ${newLabelsToAdd.length} labels would exceed the limit of 100.
+      You can only add ${availableSpace} more component version labels to this pull request.
       New components: ${status.newComponents?.length || 0}
       Modified components: ${status.modifiedComponents?.length || 0}
       Please manage version bumps globally by adding [major], [minor] or [patch] label for this pull request.
@@ -126,12 +155,10 @@ const createVersionLabels = async (
     return;
   }
 
-  core.info(`Creating ${versionLabels.length} version labels`);
+  core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
   
-  // Create GitHub labels
-  const octokit = getOctokit(githubToken);
-  
-  for (const label of versionLabels) {
+  // Create GitHub labels if they do not exist
+  for (const label of newLabelsToCreate) {
     try {
       core.info(`Creating GitHub label: ${label}`);
       await octokit.rest.issues.createLabel({
@@ -141,21 +168,23 @@ const createVersionLabels = async (
         color: "6f42c1",
       });
     } catch (error: any) {
-      if (error.status !== 422) {
-        throw error;
-      }
-      core.info(`Label ${label} already exists`);
+      // Handle unexpected errors
+      core.error(`Failed to create label ${label}: ${error.message}`);
     }
   }
 
-  // Add all labels to the PR in one call
-  core.info(`Adding labels to PR #${prNumber}`);
-  await octokit.rest.issues.addLabels({
-    owner,
-    repo,
-    issue_number: prNumber,
-    labels: versionLabels
-  });
+  // Add all new labels to the PR in one call
+  if (newLabelsToAdd.length > 0) {
+    core.info(`Adding labels to PR #${prNumber}`);
+    await octokit.rest.issues.addLabels({
+      owner,
+      repo,
+      issue_number: prNumber,
+      labels: newLabelsToAdd,  // Pass the filtered array of labels
+    });
+  } else {
+    core.info("No new labels to add to the PR.");
+  }
 };
 
 export default async function run(
@@ -173,7 +202,7 @@ export default async function run(
 
   let statusRaw = "";
 
-  await exec("bit", ['status', '--json'], {
+  await exec("bit", ["status", "--json"], {
     cwd: wsDir,
     listeners: {
       stdout: (data: Buffer) => {
@@ -188,18 +217,37 @@ export default async function run(
     await createVersionLabels(githubToken, repo, owner, prNumber, status);
   }
 
-  await exec('bit', ['lane', 'create', laneName, ...args], { cwd: wsDir });
-  const snapMessageText = await createSnapMessageText(githubToken, repo, owner, prNumber);
+  await exec("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
+  const snapMessageText = await createSnapMessageText(
+    githubToken,
+    repo,
+    owner,
+    prNumber
+  );
 
-  const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"]
-  await exec('bit', ['snap', '-m', snapMessageText, ...buildFlag, ...args], { cwd: wsDir });
-  
+  const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
+  await exec("bit", ["snap", "-m", snapMessageText, ...buildFlag, ...args], {
+    cwd: wsDir,
+  });
+
   try {
-    await exec('bit', ['lane', 'remove', `${org}.${scope}/${laneName}`, '--remote', '--silent', '--force', ...args], { cwd: wsDir });
+    await exec(
+      "bit",
+      [
+        "lane",
+        "remove",
+        `${org}.${scope}/${laneName}`,
+        "--remote",
+        "--silent",
+        "--force",
+        ...args,
+      ],
+      { cwd: wsDir }
+    );
   } catch (error) {
     console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
   }
-  await exec('bit', ['export', ...args], { cwd: wsDir });
+  await exec("bit", ["export", ...args], { cwd: wsDir });
 
   postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
-};
+}
