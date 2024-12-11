@@ -11021,14 +11021,15 @@ const getHumanReadableTimestamp = () => {
 const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     core.info("Creating version labels for new and modified components");
-    // Create version labels array from new and modified components
     const versionLabels = [
         ...(status.newComponents || []),
         ...(status.modifiedComponents || []),
     ].map((componentId) => {
         const label = `${componentId}@auto`;
-        core.info(`Processing label: ${label}`);
-        return label;
+        const name = label.length > 50 ? label.slice(-50) : label;
+        const description = componentId;
+        core.info(`Processing label: ${label} with description: ${description}`);
+        return { name, description };
     });
     // Get existing labels on the PR
     const octokit = (0, github_1.getOctokit)(githubToken);
@@ -11043,18 +11044,17 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
     const labelsToRemove = prLabels
         .filter((prLabel) => {
         return (versionPattern.test(prLabel.name) &&
-            !versionLabels.some((versionLabel) => versionLabel.split("@")[0] === prLabel.name.split("@")[0]));
-    })
-        .map((prLabel) => prLabel.name);
+            !versionLabels.some((versionLabel) => versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]));
+    });
     // Remove labels that match the version pattern and are not in versionLabels
     if (labelsToRemove.length > 0) {
-        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.join(", ")}`);
+        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.map((prLabel) => prLabel.name).join(", ")}`);
         for (const label of labelsToRemove) {
             yield octokit.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number: prNumber,
-                name: label,
+                name: label.name,
             });
         }
     }
@@ -11063,11 +11063,11 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         owner,
         repo,
     });
-    const newLabelsToAdd = versionLabels.filter((label) => {
-        return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === label.split("@")[0]);
+    const newLabelsToAdd = versionLabels.filter(({ name }) => {
+        return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]);
     });
     // Determine which labels need to be created in the repository
-    const newLabelsToCreate = newLabelsToAdd.filter((label) => !repoLabels.some((repoLabel) => repoLabel.name === label) // Labels not in the repository
+    const newLabelsToCreate = newLabelsToAdd.filter(({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
     );
     // Check if adding new labels will exceed the limit
     const currentLabelCount = prLabels.length;
@@ -11085,19 +11085,20 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
     }
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
     // Create GitHub labels if they do not exist
-    for (const label of newLabelsToCreate) {
+    for (const { name, description } of newLabelsToCreate) {
         try {
-            core.info(`Creating GitHub label: ${label}`);
+            core.info(`Creating GitHub label: ${name} with description: ${description}`);
             yield octokit.rest.issues.createLabel({
                 owner,
                 repo,
-                name: label,
+                name: name,
                 color: "6f42c1",
+                description: description,
             });
         }
         catch (error) {
             // Handle unexpected errors
-            core.error(`Failed to create label ${label}: ${error.message}`);
+            core.error(`Failed to create label ${name}: ${error.message}`);
         }
     }
     // Add all new labels to the PR in one call
@@ -11107,7 +11108,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
             owner,
             repo,
             issue_number: prNumber,
-            labels: newLabelsToAdd, // Pass the filtered array of labels
+            labels: newLabelsToAdd.map(({ name }) => name), // Pass the filtered array of labels
         });
     }
     else {

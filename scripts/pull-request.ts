@@ -105,14 +105,16 @@ const createVersionLabels = async (
 ) => {
   core.info("Creating version labels for new and modified components");
 
-  // Create version labels array from new and modified components
   const versionLabels = [
     ...(status.newComponents || []),
     ...(status.modifiedComponents || []),
   ].map((componentId: string) => {
     const label = `${componentId}@auto`;
-    core.info(`Processing label: ${label}`);
-    return label;
+    const name = label.length > 50 ? label.slice(-50) : label;
+    const description = componentId;
+
+    core.info(`Processing label: ${label} with description: ${description}`);
+    return { name, description };
   });
 
   // Get existing labels on the PR
@@ -133,23 +135,22 @@ const createVersionLabels = async (
         versionPattern.test(prLabel.name) &&
         !versionLabels.some(
           (versionLabel) =>
-            versionLabel.split("@")[0] === prLabel.name.split("@")[0]
+            versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]
         )
       );
-    })
-    .map((prLabel) => prLabel.name);
+    });
 
   // Remove labels that match the version pattern and are not in versionLabels
   if (labelsToRemove.length > 0) {
     core.info(
-      `Removing labels from PR #${prNumber}: ${labelsToRemove.join(", ")}`
+      `Removing labels from PR #${prNumber}: ${labelsToRemove.map((prLabel) => prLabel.name).join(", ")}`
     );
     for (const label of labelsToRemove) {
       await octokit.rest.issues.removeLabel({
         owner,
         repo,
         issue_number: prNumber,
-        name: label,
+        name: label.name,
       });
     }
   }
@@ -160,16 +161,16 @@ const createVersionLabels = async (
     repo,
   });
 
-  const newLabelsToAdd = versionLabels.filter((label) => {
+  const newLabelsToAdd = versionLabels.filter(({ name }) => {
     return !prLabels.some(
       (existingLabel) =>
-        existingLabel.name.split("@")[0] === label.split("@")[0]
+        existingLabel.name.split("@")[0] === name.split("@")[0]
     );
   });
 
   // Determine which labels need to be created in the repository
   const newLabelsToCreate = newLabelsToAdd.filter(
-    (label) => !repoLabels.some((repoLabel) => repoLabel.name === label) // Labels not in the repository
+    ({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
   );
 
   // Check if adding new labels will exceed the limit
@@ -195,18 +196,19 @@ const createVersionLabels = async (
   );
 
   // Create GitHub labels if they do not exist
-  for (const label of newLabelsToCreate) {
+  for (const { name, description } of newLabelsToCreate) {
     try {
-      core.info(`Creating GitHub label: ${label}`);
+      core.info(`Creating GitHub label: ${name} with description: ${description}`);
       await octokit.rest.issues.createLabel({
         owner,
         repo,
-        name: label,
+        name: name,
         color: "6f42c1",
+        description: description,
       });
     } catch (error: any) {
       // Handle unexpected errors
-      core.error(`Failed to create label ${label}: ${error.message}`);
+      core.error(`Failed to create label ${name}: ${error.message}`);
     }
   }
 
@@ -217,7 +219,7 @@ const createVersionLabels = async (
       owner,
       repo,
       issue_number: prNumber,
-      labels: newLabelsToAdd, // Pass the filtered array of labels
+      labels: newLabelsToAdd.map(({ name }) => name), // Pass the filtered array of labels
     });
   } else {
     core.info("No new labels to add to the PR.");
