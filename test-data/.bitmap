@@ -12,21 +12,21 @@
     "apps/my-app": {
         "name": "apps/my-app",
         "scope": "bit-tasks.test-scope",
-        "version": "0.0.6",
+        "version": "0.0.8",
         "mainFile": "index.ts",
         "rootDir": "test-scope/apps/my-app"
     },
     "get-hello-world": {
         "name": "get-hello-world",
         "scope": "bit-tasks.test-scope",
-        "version": "0.0.3",
+        "version": "0.0.4",
         "mainFile": "index.ts",
         "rootDir": "test-scope/get-hello-world"
     },
     "ui/hello-world": {
         "name": "ui/hello-world",
         "scope": "bit-tasks.test-scope",
-        "version": "0.0.7",
+        "version": "0.0.9",
         "mainFile": "index.ts",
         "rootDir": "test-scope/ui/hello-world"
     },
