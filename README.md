@@ -13,22 +13,22 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 ### `version-labels`
 
-**Optional** When set to true, adds labels to the PR with component versions. Default `false`. Available in v2+.
+**Optional** When set to true, adds labels to the PR with component versions. Default `false`. Available in `v2` and later versions.
 
-The labels are automatically added in the format `component-id@auto` for all new and modified components. You can then modify these labels in the PR to control version bumping:
+The labels are automatically added in the format `component-name@auto` for all new and modified components. The complete component id including org and scope (e.g `bit-tasks.test-scope/ui/hello-world`) is added to the label description. You can then modify these labels in the PR to control version bumping:
 
-- `org.scope/component@auto` - Uses the default 'patch' bump or automatically uses the version bump specified through:
+- `component-name@auto` - Uses the default 'patch' bump or automatically uses the version bump specified through:
   - Pull Request Labels: Use the keyword directly (e.g., `major`) or enclosed within square brackets (e.g., `[major]`)
-  - Pull Request or Commit Title: Include the version keyword in square brackets (e.g., `feat: new button [major]`)
-- `org.scope/component@patch` - Forces a patch version bump
-- `org.scope/component@minor` - Forces a minor version bump
-- `org.scope/component@major` - Forces a major version bump
+  - Pull Request or Commit Title: Include the version keyword in square brackets (e.g., `feature: new button [major]`)
+- `component-name@patch` - Forces a patch version bump
+- `component-name@minor` - Forces a minor version bump
+- `component-name@major` - Forces a major version bump
 
 Supported version keywords are: `major`, `minor`, and `patch`.
 
 Example:
-- Initial auto-added label: `my-org.my-scope/ui/button@auto`
-- Modified to force minor bump: `my-org.my-scope/ui/button@minor`
+- Initial auto-added label: `ui/button@auto`
+- Modified to force minor bump: `ui/button@minor`
 
 ## Example usage
 
