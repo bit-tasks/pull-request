@@ -11025,10 +11025,10 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         ...(status.newComponents || []),
         ...(status.modifiedComponents || []),
     ].map((componentId) => {
-        const label = `${componentId}@auto`;
-        const name = label.length > 50 ? label.slice(-50) : label;
+        const componentName = `${componentId.substring(componentId.indexOf('/') + 1)}@auto`;
+        const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
         const description = componentId;
-        core.info(`Processing label: ${label} with description: ${description}`);
+        core.info(`Processing label: ${name} with description: ${description}`);
         return { name, description };
     });
     // Get existing labels on the PR
