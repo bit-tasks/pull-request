@@ -225,7 +225,7 @@ const createVersionLabels = async (
 
   if (hasGlobalVersionLabel) {
     core.info(
-      "Skipping adding component labels to the pull request since a global version override is set (e.g., [major], [minor], or [patch] label)."
+      "Skipping adding component labels to the pull request since a global version override label is set (e.g., [major], [minor], or [patch])."
     );
   }
 

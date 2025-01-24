@@ -11106,7 +11106,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         }
     }
     if (hasGlobalVersionLabel) {
-        core.info("Skipping adding component labels to the pull request since a global version override is set (e.g., [major], [minor], or [patch] label).");
+        core.info("Skipping adding component labels to the pull request since a global version override label is set (e.g., [major], [minor], or [patch]).");
     }
     // Add all new labels to the PR unless there are no global labels set
     if (!hasGlobalVersionLabel && newLabelsToAdd.length > 0) {
