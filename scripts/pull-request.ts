@@ -101,7 +101,8 @@ const createVersionLabels = async (
   repo: string,
   owner: string,
   prNumber: number,
-  status: any
+  status: any,
+  versionLabelsColor: string
 ) => {
   core.info("Creating version labels for new and modified components");
 
@@ -109,8 +110,11 @@ const createVersionLabels = async (
     ...(status.newComponents || []),
     ...(status.modifiedComponents || []),
   ].map((componentId: string) => {
-    const componentName = `${componentId.substring(componentId.indexOf('/') + 1)}@auto`;
-    const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
+    const componentName = `${componentId.substring(
+      componentId.indexOf("/") + 1
+    )}@patch`;
+    const name =
+      componentName.length > 50 ? componentName.slice(-50) : componentName;
     const description = componentId;
 
     core.info(`Processing label: ${name} with description: ${description}`);
@@ -126,24 +130,30 @@ const createVersionLabels = async (
   });
 
   // Define the version pattern
-  const versionPattern = /@(major|minor|patch|auto)$/;
+  const componentVersionPattern = /@(major|minor|patch)$/;
+  const globalVersionPattern = /\[(major|minor|patch)\]$/;
+
+  const hasGlobalVersionLabel = prLabels.some((prLabel) =>
+    globalVersionPattern.test(prLabel.name)
+  );
 
   // Identify labels to remove
-  const labelsToRemove = prLabels
-    .filter((prLabel) => {
-      return (
-        versionPattern.test(prLabel.name) &&
-        !versionLabels.some(
-          (versionLabel) =>
-            versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]
-        )
-      );
-    });
+  const labelsToRemove = prLabels.filter((prLabel) => {
+    return (
+      componentVersionPattern.test(prLabel.name) &&
+      !versionLabels.some(
+        (versionLabel) =>
+          versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]
+      )
+    );
+  });
 
   // Remove labels that match the version pattern and are not in versionLabels
   if (labelsToRemove.length > 0) {
     core.info(
-      `Removing labels from PR #${prNumber}: ${labelsToRemove.map((prLabel) => prLabel.name).join(", ")}`
+      `Removing labels from PR #${prNumber}: ${labelsToRemove
+        .map((prLabel) => prLabel.name)
+        .join(", ")}`
     );
     for (const label of labelsToRemove) {
       await octokit.rest.issues.removeLabel({
@@ -163,8 +173,7 @@ const createVersionLabels = async (
 
   const newLabelsToAdd = versionLabels.filter(({ name }) => {
     return !prLabels.some(
-      (existingLabel) =>
-        existingLabel.name.split("@")[0] === name.split("@")[0]
+      (existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]
     );
   });
 
@@ -198,12 +207,14 @@ const createVersionLabels = async (
   // Create GitHub labels if they do not exist
   for (const { name, description } of newLabelsToCreate) {
     try {
-      core.info(`Creating GitHub label: ${name} with description: ${description}`);
+      core.info(
+        `Creating GitHub label: ${name} with description: ${description}`
+      );
       await octokit.rest.issues.createLabel({
         owner,
         repo,
         name: name,
-        color: "6f42c1",
+        color: versionLabelsColor,
         description: description,
       });
     } catch (error: any) {
@@ -212,8 +223,14 @@ const createVersionLabels = async (
     }
   }
 
-  // Add all new labels to the PR in one call
-  if (newLabelsToAdd.length > 0) {
+  if (hasGlobalVersionLabel) {
+    core.info(
+      "Skipping adding component labels to the pull request since a global version override is set (e.g., [major], [minor], or [patch] label)."
+    );
+  }
+
+  // Add all new labels to the PR unless there are no global labels set
+  if (!hasGlobalVersionLabel && newLabelsToAdd.length > 0) {
     core.info(`Adding labels to PR #${prNumber}`);
     await octokit.rest.issues.addLabels({
       owner,
@@ -233,6 +250,7 @@ export default async function run(
   prNumber: number,
   laneName: string,
   versionLabel: boolean,
+  versionLabelsColor: string,
   wsDir: string,
   args: string[]
 ) {
@@ -253,7 +271,14 @@ export default async function run(
   const status = JSON.parse(statusRaw.trim());
 
   if (versionLabel) {
-    await createVersionLabels(githubToken, repo, owner, prNumber, status);
+    await createVersionLabels(
+      githubToken,
+      repo,
+      owner,
+      prNumber,
+      status,
+      versionLabelsColor
+    );
   }
 
   await exec("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });

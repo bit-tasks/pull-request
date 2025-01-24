@@ -13,22 +13,39 @@ This task creates a Bit lane and adds the component changes for you to verify an
 
 ### `version-labels`
 
-**Optional** When set to true, adds labels to the PR with component versions. Default `false`. Available in `v2` and later versions.
+**Optional:** When set to `true`, this task automatically adds the label `component-name@patch` to the Pull Request. The default value is `false`. Available in `bit-tasks/pull-request@v2` and later versions.
 
-The labels are automatically added in the format `component-name@auto` for all new and modified components. The complete component id including org and scope (e.g `bit-tasks.test-scope/ui/hello-world`) is added to the label description. You can then modify these labels in the PR to control version bumping:
+By default, the label is automatically added in the format `component-name@patch` for all new and modified components. The complete component ID, including the organization and scope (e.g., `bit-tasks.test-scope/ui/hello-world`), is added to the label description. You can modify these labels in the Pull Request to control version bumping:
 
-- `component-name@auto` - Uses the default 'patch' bump or automatically uses the version bump specified through:
-  - Pull Request Labels: Use the keyword directly (e.g., `major`) or enclosed within square brackets (e.g., `[major]`)
-  - Pull Request or Commit Title: Include the version keyword in square brackets (e.g., `feature: new button [major]`)
-- `component-name@patch` - Forces a patch version bump
-- `component-name@minor` - Forces a minor version bump
-- `component-name@major` - Forces a major version bump
+- `component-name@patch` - Forces a patch version bump (default).
+- `component-name@minor` - Forces a minor version bump.
+- `component-name@major` - Forces a major version bump.
 
-Supported version keywords are: `major`, `minor`, and `patch`.
+When modifying or creating labels manually, supported version keywords for component-specific labels are: `major`, `minor`, and `patch`.
 
-Example:
-- Initial auto-added label: `ui/button@auto`
-- Modified to force minor bump: `ui/button@minor`
+#### Example:
+- By default, the `patch` label is automatically added as: `ui/button@patch`.
+- It can be modified manually to force a minor version bump: `ui/button@minor`.
+
+#### Global Version Overrides
+
+You can create global version labels by adding the label directly enclosed within square brackets (e.g., `[major]`). Supported global version keywords are: `[major]`, `[minor]`, `[patch]`, and `pre-release:<flag>` (e.g., `pre-release:beta`).
+
+**Note:** When a global override label is added, component-specific version labels are no longer automatically added to the Pull Request. However, these labels are still created at the repository level, allowing you to manually add them to the Pull Request if needed to override specific component versions. If you are creating any component label manually, ensure that both the component version (`component-name@<version>`) and the complete component ID (`org.scope/<component-id>`, e.g., `bit-tasks.test-scope/ui/hello-world`) are added as the `name` and `description` of the Pull Request label.
+
+### `version-labels-color`
+
+**Optional** Use this parameter to define the color of automatically created version labels in hexadecimal format (without the`#` prefix). The default value is `6f42c1` (a shade of purple). This is also available in bit-tasks/pull-request@v2 and later versions.
+
+For example:
+
+```
+- name: Bit Pull Request
+  uses: bit-tasks/pull-request@v2
+  with:
+    version-labels: true
+    version-labels-color: 'C2E0C6'
+```
 
 ## Example usage
 

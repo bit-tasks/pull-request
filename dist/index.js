@@ -10886,6 +10886,7 @@ try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const versionLabels = core.getInput("version-labels") === "true" ? true : false;
+    const versionLabelsColor = core.getInput("version-labels-color") || '6f42c1';
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
@@ -10896,7 +10897,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, wsDir, args);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColor, wsDir, args);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11018,14 +11019,14 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __awaiter(void 0, void 0, void 0, function* () {
+const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColor) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
         ...(status.newComponents || []),
         ...(status.modifiedComponents || []),
     ].map((componentId) => {
-        const componentName = `${componentId.substring(componentId.indexOf('/') + 1)}@auto`;
+        const componentName = `${componentId.substring(componentId.indexOf("/") + 1)}@patch`;
         const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
         const description = componentId;
         core.info(`Processing label: ${name} with description: ${description}`);
@@ -11039,16 +11040,19 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         issue_number: prNumber,
     });
     // Define the version pattern
-    const versionPattern = /@(major|minor|patch|auto)$/;
+    const componentVersionPattern = /@(major|minor|patch)$/;
+    const globalVersionPattern = /\[(major|minor|patch)\]$/;
+    const hasGlobalVersionLabel = prLabels.some((prLabel) => globalVersionPattern.test(prLabel.name));
     // Identify labels to remove
-    const labelsToRemove = prLabels
-        .filter((prLabel) => {
-        return (versionPattern.test(prLabel.name) &&
+    const labelsToRemove = prLabels.filter((prLabel) => {
+        return (componentVersionPattern.test(prLabel.name) &&
             !versionLabels.some((versionLabel) => versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]));
     });
     // Remove labels that match the version pattern and are not in versionLabels
     if (labelsToRemove.length > 0) {
-        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove.map((prLabel) => prLabel.name).join(", ")}`);
+        core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove
+            .map((prLabel) => prLabel.name)
+            .join(", ")}`);
         for (const label of labelsToRemove) {
             yield octokit.rest.issues.removeLabel({
                 owner,
@@ -11092,7 +11096,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
                 owner,
                 repo,
                 name: name,
-                color: "6f42c1",
+                color: versionLabelsColor,
                 description: description,
             });
         }
@@ -11101,8 +11105,11 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
             core.error(`Failed to create label ${name}: ${error.message}`);
         }
     }
-    // Add all new labels to the PR in one call
-    if (newLabelsToAdd.length > 0) {
+    if (hasGlobalVersionLabel) {
+        core.info("Skipping adding component labels to the pull request since a global version override is set (e.g., [major], [minor], or [patch] label).");
+    }
+    // Add all new labels to the PR unless there are no global labels set
+    if (!hasGlobalVersionLabel && newLabelsToAdd.length > 0) {
         core.info(`Adding labels to PR #${prNumber}`);
         yield octokit.rest.issues.addLabels({
             owner,
@@ -11115,7 +11122,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status) => __aw
         core.info("No new labels to add to the PR.");
     }
 });
-function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, args) {
+function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColor, wsDir, args) {
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
         const scope = process.env.SCOPE;
@@ -11130,7 +11137,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, wsDir, 
         }); // Avoid log param, since output is parsed for next steps
         const status = JSON.parse(statusRaw.trim());
         if (versionLabel) {
-            yield createVersionLabels(githubToken, repo, owner, prNumber, status);
+            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColor);
         }
         yield (0, exec_1.exec)("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
