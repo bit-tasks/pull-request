@@ -6,7 +6,11 @@ try {
   const githubToken = process.env.GITHUB_TOKEN;
   const wsDir: string = core.getInput("ws-dir") || process.env.WSDIR || "./";
   const versionLabels: boolean = core.getInput("version-labels") === "true" ? true : false;
-  const versionLabelsColor: string = core.getInput("version-labels-color") || '6f42c1';
+  const versionLabelsColors = {
+    major:  core.getInput("version-labels-color-major"),
+    minor:  core.getInput("version-labels-color-minor"),
+    patch:  core.getInput("version-labels-color-patch")
+  };
   const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
   const prNumber = context?.payload?.pull_request?.number;
   const { owner, repo } = context?.repo;
@@ -20,7 +24,7 @@ try {
   }
 
   const laneName = `pr-${prNumber?.toString()}`;
-  run(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColor, wsDir, args);
+  run(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColors, wsDir, args);
 } catch (error) {
   core.setFailed((error as Error).message);
 }

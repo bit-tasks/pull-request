@@ -10,10 +10,18 @@ inputs:
   version-labels:
       description: "Include semantic version labels for new/modified components"
       required: false
-  version-labels-color:
-      description: "Specify the hex color code for automatically created version labels."
+  version-labels-color-major:
+      description: "Specify the hex color code for automatically created major version labels."
       required: false
-      default: "6f42c1"
+      default: "f0a09f"
+  version-labels-color-minor:
+      description: "Specify the hex color code for automatically created minor version labels."
+      required: false
+      default: "f0e8bd"
+  version-labels-color-patch:
+      description: "Specify the hex color code for automatically created patch version labels."
+      required: false
+      default: "c2e0c6"
 runs:
   using: 'node20'
   main: 'dist/index.js'

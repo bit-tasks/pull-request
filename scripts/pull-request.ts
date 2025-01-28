@@ -102,23 +102,30 @@ const createVersionLabels = async (
   owner: string,
   prNumber: number,
   status: any,
-  versionLabelsColor: string
+  versionLabelsColors: { patch: string; minor: string; major: string }
 ) => {
   core.info("Creating version labels for new and modified components");
 
   const versionLabels = [
     ...(status.newComponents || []),
     ...(status.modifiedComponents || []),
-  ].map((componentId: string) => {
-    const componentName = `${componentId.substring(
-      componentId.indexOf("/") + 1
-    )}@patch`;
-    const name =
-      componentName.length > 50 ? componentName.slice(-50) : componentName;
-    const description = componentId;
+  ].flatMap((componentId: string) => {
+    const baseName = componentId.substring(componentId.indexOf("/") + 1);
 
-    core.info(`Processing label: ${name} with description: ${description}`);
-    return { name, description };
+    // Generate labels for @patch, @major, and @minor
+    return (["patch", "major", "minor"] as const).map((version) => {
+      const componentName = `${baseName}@${version}`;
+      const name =
+        componentName.length > 50 ? componentName.slice(-50) : componentName;
+      const description = componentId;
+      const color =
+        versionLabelsColors[version];
+
+      core.info(
+        `Processing label: ${name} with description: ${description} and color: #${color}`
+      );
+      return { name, description, color };
+    });
   });
 
   // Get existing labels on the PR
@@ -131,12 +138,6 @@ const createVersionLabels = async (
 
   // Define the version pattern
   const componentVersionPattern = /@(major|minor|patch)$/;
-  const globalVersionPattern = /\[(major|minor|patch)\]$/;
-
-  const hasGlobalVersionLabel = prLabels.some((prLabel) =>
-    globalVersionPattern.test(prLabel.name)
-  );
-
   // Identify labels to remove
   const labelsToRemove = prLabels.filter((prLabel) => {
     return (
@@ -148,7 +149,7 @@ const createVersionLabels = async (
     );
   });
 
-  // Remove labels that match the version pattern and are not in versionLabels
+  // Remove labels that match the version pattern and are not in versionLabels from the pull request
   if (labelsToRemove.length > 0) {
     core.info(
       `Removing labels from PR #${prNumber}: ${labelsToRemove
@@ -182,64 +183,27 @@ const createVersionLabels = async (
     ({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
   );
 
-  // Check if adding new labels will exceed the limit
-  const currentLabelCount = prLabels.length;
-  const totalLabelCount = currentLabelCount + newLabelsToAdd.length;
-
-  if (totalLabelCount > 100) {
-    const availableSpace = 100 - currentLabelCount;
-    core.warning(`
-      Unable to create version labels: Adding ${
-        newLabelsToAdd.length
-      } labels would exceed the limit of 100.
-      You can only add ${availableSpace} more component version labels to this pull request.
-      New components: ${status.newComponents?.length || 0}
-      Modified components: ${status.modifiedComponents?.length || 0}
-      Please manage version bumps globally by adding [major], [minor] or [patch] label for this pull request.
-    `);
-    return;
-  }
-
   core.info(
     `Creating ${newLabelsToCreate.length} new labels in the repository`
   );
 
   // Create GitHub labels if they do not exist
-  for (const { name, description } of newLabelsToCreate) {
+  for (const { name, description, color } of newLabelsToCreate) {
     try {
       core.info(
-        `Creating GitHub label: ${name} with description: ${description}`
+        `Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`
       );
       await octokit.rest.issues.createLabel({
         owner,
         repo,
         name: name,
-        color: versionLabelsColor,
+        color: color,
         description: description,
       });
     } catch (error: any) {
       // Handle unexpected errors
       core.error(`Failed to create label ${name}: ${error.message}`);
     }
-  }
-
-  if (hasGlobalVersionLabel) {
-    core.info(
-      "Skipping adding component labels to the pull request since a global version override label is set (e.g., [major], [minor], or [patch])."
-    );
-  }
-
-  // Add all new labels to the PR unless there are no global labels set
-  if (!hasGlobalVersionLabel && newLabelsToAdd.length > 0) {
-    core.info(`Adding labels to PR #${prNumber}`);
-    await octokit.rest.issues.addLabels({
-      owner,
-      repo,
-      issue_number: prNumber,
-      labels: newLabelsToAdd.map(({ name }) => name), // Pass the filtered array of labels
-    });
-  } else {
-    core.info("No new labels to add to the PR.");
   }
 };
 
@@ -250,7 +214,7 @@ export default async function run(
   prNumber: number,
   laneName: string,
   versionLabel: boolean,
-  versionLabelsColor: string,
+  versionLabelsColors: { patch: string; minor: string; major: string },
   wsDir: string,
   args: string[]
 ) {
@@ -277,7 +241,7 @@ export default async function run(
       owner,
       prNumber,
       status,
-      versionLabelsColor
+      versionLabelsColors
     );
   }
 

@@ -10886,7 +10886,11 @@ try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
     const versionLabels = core.getInput("version-labels") === "true" ? true : false;
-    const versionLabelsColor = core.getInput("version-labels-color") || '6f42c1';
+    const versionLabelsColors = {
+        major: core.getInput("version-labels-color-major"),
+        minor: core.getInput("version-labels-color-minor"),
+        patch: core.getInput("version-labels-color-patch")
+    };
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
@@ -10897,7 +10901,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColor, wsDir, args);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColors, wsDir, args);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11019,18 +11023,22 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColor) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors) => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
         ...(status.newComponents || []),
         ...(status.modifiedComponents || []),
-    ].map((componentId) => {
-        const componentName = `${componentId.substring(componentId.indexOf("/") + 1)}@patch`;
-        const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
-        const description = componentId;
-        core.info(`Processing label: ${name} with description: ${description}`);
-        return { name, description };
+    ].flatMap((componentId) => {
+        const baseName = componentId.substring(componentId.indexOf("/") + 1);
+        // Generate labels for @patch, @major, and @minor
+        return ["patch", "major", "minor"].map((version) => {
+            const componentName = `${baseName}@${version}`;
+            const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
+            const description = componentId;
+            const color = versionLabelsColors[version];
+            core.info(`Processing label: ${name} with description: ${description} and color: #${color}`);
+            return { name, description, color };
+        });
     });
     // Get existing labels on the PR
     const octokit = (0, github_1.getOctokit)(githubToken);
@@ -11041,14 +11049,12 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
     });
     // Define the version pattern
     const componentVersionPattern = /@(major|minor|patch)$/;
-    const globalVersionPattern = /\[(major|minor|patch)\]$/;
-    const hasGlobalVersionLabel = prLabels.some((prLabel) => globalVersionPattern.test(prLabel.name));
     // Identify labels to remove
     const labelsToRemove = prLabels.filter((prLabel) => {
         return (componentVersionPattern.test(prLabel.name) &&
             !versionLabels.some((versionLabel) => versionLabel.name.split("@")[0] === prLabel.name.split("@")[0]));
     });
-    // Remove labels that match the version pattern and are not in versionLabels
+    // Remove labels that match the version pattern and are not in versionLabels from the pull request
     if (labelsToRemove.length > 0) {
         core.info(`Removing labels from PR #${prNumber}: ${labelsToRemove
             .map((prLabel) => prLabel.name)
@@ -11073,30 +11079,16 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
     // Determine which labels need to be created in the repository
     const newLabelsToCreate = newLabelsToAdd.filter(({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
     );
-    // Check if adding new labels will exceed the limit
-    const currentLabelCount = prLabels.length;
-    const totalLabelCount = currentLabelCount + newLabelsToAdd.length;
-    if (totalLabelCount > 100) {
-        const availableSpace = 100 - currentLabelCount;
-        core.warning(`
-      Unable to create version labels: Adding ${newLabelsToAdd.length} labels would exceed the limit of 100.
-      You can only add ${availableSpace} more component version labels to this pull request.
-      New components: ${((_a = status.newComponents) === null || _a === void 0 ? void 0 : _a.length) || 0}
-      Modified components: ${((_b = status.modifiedComponents) === null || _b === void 0 ? void 0 : _b.length) || 0}
-      Please manage version bumps globally by adding [major], [minor] or [patch] label for this pull request.
-    `);
-        return;
-    }
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
     // Create GitHub labels if they do not exist
-    for (const { name, description } of newLabelsToCreate) {
+    for (const { name, description, color } of newLabelsToCreate) {
         try {
-            core.info(`Creating GitHub label: ${name} with description: ${description}`);
+            core.info(`Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`);
             yield octokit.rest.issues.createLabel({
                 owner,
                 repo,
                 name: name,
-                color: versionLabelsColor,
+                color: color,
                 description: description,
             });
         }
@@ -11105,24 +11097,8 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
             core.error(`Failed to create label ${name}: ${error.message}`);
         }
     }
-    if (hasGlobalVersionLabel) {
-        core.info("Skipping adding component labels to the pull request since a global version override label is set (e.g., [major], [minor], or [patch]).");
-    }
-    // Add all new labels to the PR unless there are no global labels set
-    if (!hasGlobalVersionLabel && newLabelsToAdd.length > 0) {
-        core.info(`Adding labels to PR #${prNumber}`);
-        yield octokit.rest.issues.addLabels({
-            owner,
-            repo,
-            issue_number: prNumber,
-            labels: newLabelsToAdd.map(({ name }) => name), // Pass the filtered array of labels
-        });
-    }
-    else {
-        core.info("No new labels to add to the PR.");
-    }
 });
-function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColor, wsDir, args) {
+function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColors, wsDir, args) {
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
         const scope = process.env.SCOPE;
@@ -11137,7 +11113,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
         }); // Avoid log param, since output is parsed for next steps
         const status = JSON.parse(statusRaw.trim());
         if (versionLabel) {
-            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColor);
+            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors);
         }
         yield (0, exec_1.exec)("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
