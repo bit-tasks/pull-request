@@ -202,7 +202,7 @@ const createVersionLabels = async (
       });
     } catch (error: any) {
       // Handle unexpected errors
-      core.error(`Failed to create label ${name}: ${error.message}`);
+      core.info(`Skipped creating label ${name}: ${error.message}`);
     }
   }
 };
