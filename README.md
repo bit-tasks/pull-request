@@ -33,15 +33,15 @@ You can create global version labels by adding the label directly enclosed withi
 
 **Note:** If you are creating component labels manually, ensure that both the component version (`component-name@<version>`) and the complete component ID (`org.scope/<component-id>`, e.g., `bit-tasks.test-scope/ui/hello-world`) are added as the `name` and `description` of the Pull Request label.
 
-### `version-labels-major-color`
+### `version-labels-color-major`
 
 **Optional** Use this parameter to define the color of automatically created major version labels in hexadecimal format (without the`#` prefix). The default value is `f0a09f` (a shade of purple). This is also available in bit-tasks/pull-request@v2 and later versions.
 
-### `version-labels-minor-color`
+### `version-labels-color-minor`
 
 **Optional** Use this parameter to define the color of automatically created minor version labels in hexadecimal format (without the`#` prefix). The default value is `f0e8bd` (a shade of purple). This is also available in bit-tasks/pull-request@v2 and later versions.
 
-### `version-labels-patch-color`
+### `version-labels-color-patch`
 
 **Optional** Use this parameter to define the color of automatically created patch version labels in hexadecimal format (without the`#` prefix). The default value is `c2e0c6` (a shade of purple). This is also available in bit-tasks/pull-request@v2 and later versions.
 
@@ -52,7 +52,7 @@ For example:
   uses: bit-tasks/pull-request@v2
   with:
     version-labels: true
-    version-labels-color: 'C2E0C6'
+    version-labels-color-major: 'C2E0C6'
 ```
 
 ## Example usage
