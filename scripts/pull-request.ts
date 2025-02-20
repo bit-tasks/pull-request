@@ -202,7 +202,7 @@ const createVersionLabels = async (
       });
     } catch (error: any) {
       // Handle unexpected errors
-      core.error(`Failed to create label ${name}: ${error.message}`);
+      core.info(`Skipped creating label ${name}: ${error.message}`);
     }
   }
 };
@@ -259,12 +259,14 @@ export default async function run(
   });
 
   try {
+    const lane = `${org}.${scope}/${laneName}`;
+    core.info(`Attempting to remove Bit lane if it exists: ${lane}`)
     await exec(
       "bit",
       [
         "lane",
         "remove",
-        `${org}.${scope}/${laneName}`,
+        lane,
         "--remote",
         "--silent",
         "--force",
@@ -273,7 +275,7 @@ export default async function run(
       { cwd: wsDir }
     );
   } catch (error) {
-    console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+    core.info("Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it.")
   }
   await exec("bit", ["export", ...args], { cwd: wsDir });
 
