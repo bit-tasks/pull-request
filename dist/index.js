@@ -11122,10 +11122,12 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
             cwd: wsDir,
         });
         try {
+            const lane = `${org}.${scope}/${laneName}`;
+            core.info(`Attempting to remove Bit lane if it exists: ${lane}`);
             yield (0, exec_1.exec)("bit", [
                 "lane",
                 "remove",
-                `${org}.${scope}/${laneName}`,
+                lane,
                 "--remote",
                 "--silent",
                 "--force",
@@ -11133,7 +11135,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
             ], { cwd: wsDir });
         }
         catch (error) {
-            console.log(`Cannot remove bit lane: ${error}. Lane may not exist`);
+            core.info("Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it.");
         }
         yield (0, exec_1.exec)("bit", ["export", ...args], { cwd: wsDir });
         postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
