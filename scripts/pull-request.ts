@@ -228,7 +228,7 @@ export default async function run(
 
   try {
     const jsonData = await scopeQuery(`${org}.${scope}`, token);
-
+    console.log(jsonData);
     if (!jsonData?.data?.getScope?.id) {
       throw new Error(scopeErrorMessage);
     }
