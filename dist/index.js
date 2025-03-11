@@ -10910,6 +10910,40 @@ catch (error) {
 
 /***/ }),
 
+/***/ 8946:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.scopeQuery = void 0;
+const GRAPHQL_ENDPOINT = 'https://api.v2.bit.cloud/graphql';
+const scopeQuery = (id, token) => {
+    const query = `
+    query GET_SCOPE($scopeId: String!) {
+      getScope(id: $scopeId) {
+        id
+      }
+    }
+  `;
+    const variables = { scopeId: id };
+    return fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            query,
+            variables,
+        }),
+    }).then(response => response.json());
+};
+exports.scopeQuery = scopeQuery;
+
+
+/***/ }),
+
 /***/ 595:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -10951,6 +10985,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
 const core = __importStar(__nccwpck_require__(2186));
+const graphql_1 = __nccwpck_require__(8946);
 const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
     const octokit = (0, github_1.getOctokit)(githubToken);
     let messageText = "CI";
@@ -11099,10 +11134,23 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
     }
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColors, wsDir, args) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
         const scope = process.env.SCOPE;
+        const token = process.env.BIT_CONFIG_USER_TOKEN || "";
         let statusRaw = "";
+        const scopeErrorMessage = `Scope: ${org}.${scope} does not exist or you don't have access to it`;
+        try {
+            const jsonData = yield (0, graphql_1.scopeQuery)(`${org}.${scope}`, token);
+            if (!((_b = (_a = jsonData === null || jsonData === void 0 ? void 0 : jsonData.data) === null || _a === void 0 ? void 0 : _a.getScope) === null || _b === void 0 ? void 0 : _b.id)) {
+                throw new Error(scopeErrorMessage);
+            }
+        }
+        catch (error) {
+            console.log(error);
+            throw new Error(scopeErrorMessage);
+        }
         yield (0, exec_1.exec)("bit", ["status", "--json"], {
             cwd: wsDir,
             listeners: {

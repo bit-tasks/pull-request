@@ -1,6 +1,7 @@
 import { exec } from "@actions/exec";
 import { getOctokit } from "@actions/github";
 import * as core from "@actions/core";
+import { scopeQuery } from "./graphql";
 
 const createSnapMessageText = async (
   githubToken: string,
@@ -220,8 +221,21 @@ export default async function run(
 ) {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
+  const token = process.env.BIT_CONFIG_USER_TOKEN || "";
 
   let statusRaw = "";
+  const scopeErrorMessage = `Scope: ${org}.${scope} does not exist or you don't have access to it`;
+
+  try {
+    const jsonData = await scopeQuery(`${org}.${scope}`, token);
+
+    if (!jsonData?.data?.getScope?.id) {
+      throw new Error(scopeErrorMessage);
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error(scopeErrorMessage);
+  }
 
   await exec("bit", ["status", "--json"], {
     cwd: wsDir,
