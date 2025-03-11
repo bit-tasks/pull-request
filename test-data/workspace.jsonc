@@ -27,7 +27,7 @@
     /**
      * default scope for all components in workspace.
      **/
-    "defaultScope": "bit-tasks.test-scope1",
+    "defaultScope": "bit-tasks.test-scope",
     "resolveAspectsFromNodeModules": true,
     "resolveEnvsFromRoots": true
   },

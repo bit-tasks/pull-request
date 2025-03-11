@@ -11143,14 +11143,11 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
         const scopeErrorMessage = `Scope: ${org}.${scope} does not exist or you don't have access to it`;
         try {
             const jsonData = yield (0, graphql_1.scopeQuery)(`${org}.${scope}`, token);
-            console.log(jsonData);
-            console.log(jsonData === null || jsonData === void 0 ? void 0 : jsonData.data);
             if (!((_b = (_a = jsonData === null || jsonData === void 0 ? void 0 : jsonData.data) === null || _a === void 0 ? void 0 : _a.getScope) === null || _b === void 0 ? void 0 : _b.id)) {
                 throw new Error(scopeErrorMessage);
             }
         }
         catch (error) {
-            console.log(error);
             throw new Error(scopeErrorMessage);
         }
         yield (0, exec_1.exec)("bit", ["status", "--json"], {
