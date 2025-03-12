@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Initialize Bit
-        uses: bit-tasks/init@v1
+        uses: bit-tasks/init@v2
         with:
             ws-dir: 'test-data'
       - name: Creating a bare scope
