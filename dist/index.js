@@ -11065,7 +11065,6 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, e_1, _b, _c;
     core.info("Creating version labels for new and modified components");
@@ -11086,10 +11085,9 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
     });
     // Get existing labels on the PR
     const octokit = (0, github_1.getOctokit)(githubToken);
-    const { data: prLabels } = yield octokit.rest.issues.listLabelsOnIssue({
+    const { data: prLabels } = yield octokit.rest.issues.listLabelsForRepo({
         owner,
         repo,
-        issue_number: prNumber,
     });
     // Define the version pattern
     const componentVersionPattern = /@(major|minor|patch)$/;
@@ -11112,11 +11110,26 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
             });
         }
     }
-    // Get all labels in the repository
-    const { data: repoLabels } = yield octokit.rest.issues.listLabelsForRepo({
-        owner,
-        repo,
-    });
+    let labelsPage = 1;
+    const labelsPerPage = 100;
+    let repoLabels = [];
+    let moreLabelsExist = true;
+    while (moreLabelsExist) {
+        const { data: repoLabelsPage } = yield octokit.rest.issues.listLabelsForRepo({
+            owner,
+            repo,
+            page: labelsPage,
+            per_page: labelsPerPage,
+        });
+        // Check if more labels exist
+        if (repoLabelsPage.length === 0) {
+            moreLabelsExist = false;
+        }
+        else {
+            repoLabels = [...repoLabels, ...repoLabelsPage];
+            labelsPage++;
+        }
+    }
     const newLabelsToAdd = versionLabels.filter(({ name }) => {
         return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]);
     });
@@ -11133,20 +11146,20 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                 const { name, description, color } = _c;
                 try {
                     core.info(`Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`);
-                    yield octokit.rest.issues.createLabel({
+                    yield octokit.request('POST /repos/{owner}/{repo}/labels', {
                         owner,
                         repo,
                         name: name,
                         color: color,
                         description: description,
+                        headers: {
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        }
                     });
                 }
                 catch (error) {
                     // Handle unexpected errors
                     core.info(`Skipped creating label ${name}: ${error.message}`);
-                }
-                finally {
-                    yield sleep(400);
                 }
             }
             finally {

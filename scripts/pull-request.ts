@@ -97,8 +97,6 @@ const getHumanReadableTimestamp = () => {
   return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const createVersionLabels = async (
   githubToken: string,
   repo: string,
@@ -133,10 +131,9 @@ const createVersionLabels = async (
 
   // Get existing labels on the PR
   const octokit = getOctokit(githubToken);
-  const { data: prLabels } = await octokit.rest.issues.listLabelsOnIssue({
+  const { data: prLabels } = await octokit.rest.issues.listLabelsForRepo({
     owner,
     repo,
-    issue_number: prNumber,
   });
 
   // Define the version pattern
@@ -169,11 +166,35 @@ const createVersionLabels = async (
     }
   }
 
-  // Get all labels in the repository
-  const { data: repoLabels } = await octokit.rest.issues.listLabelsForRepo({
-    owner,
-    repo,
-  });
+  let labelsPage = 1;
+  const labelsPerPage = 100;
+  let repoLabels: {
+      id: number;
+      node_id: string;
+      url: string;
+      name: string;
+      description: string | null;
+      color: string;
+      default: boolean;
+  }[] = [];
+  let moreLabelsExist = true;
+
+  while (moreLabelsExist) {
+    const { data: repoLabelsPage } = await octokit.rest.issues.listLabelsForRepo({
+      owner,
+      repo,
+      page: labelsPage,
+      per_page: labelsPerPage,
+    });
+
+    // Check if more labels exist
+    if (repoLabelsPage.length === 0) {
+      moreLabelsExist = false;
+    } else {
+      repoLabels = [...repoLabels, ...repoLabelsPage];
+      labelsPage++;
+    }
+  }
 
   const newLabelsToAdd = versionLabels.filter(({ name }) => {
     return !prLabels.some(
@@ -196,18 +217,19 @@ const createVersionLabels = async (
       core.info(
         `Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`
       );
-      await octokit.rest.issues.createLabel({
+      await octokit.request('POST /repos/{owner}/{repo}/labels', {
         owner,
         repo,
         name: name,
         color: color,
         description: description,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
       });
     } catch (error: any) {
       // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
-    } finally {
-      await sleep(400);
     }
   }
 };
