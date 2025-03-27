@@ -97,6 +97,8 @@ const getHumanReadableTimestamp = () => {
   return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const createVersionLabels = async (
   githubToken: string,
   repo: string,
@@ -189,7 +191,7 @@ const createVersionLabels = async (
   );
 
   // Create GitHub labels if they do not exist
-  for (const { name, description, color } of newLabelsToCreate) {
+  for await (const { name, description, color } of newLabelsToCreate) {
     try {
       core.info(
         `Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`
@@ -204,6 +206,8 @@ const createVersionLabels = async (
     } catch (error: any) {
       // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
+    } finally {
+      await sleep(400);
     }
   }
 };

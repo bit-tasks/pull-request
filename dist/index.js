@@ -10981,6 +10981,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const exec_1 = __nccwpck_require__(1514);
 const github_1 = __nccwpck_require__(5438);
@@ -11058,7 +11065,9 @@ const getHumanReadableTimestamp = () => {
     };
     return new Date().toLocaleString("en-US", options) + " UTC";
 };
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, e_1, _b, _c;
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
         ...(status.newComponents || []),
@@ -11115,22 +11124,42 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
     const newLabelsToCreate = newLabelsToAdd.filter(({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
     );
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
-    // Create GitHub labels if they do not exist
-    for (const { name, description, color } of newLabelsToCreate) {
+    try {
+        // Create GitHub labels if they do not exist
+        for (var _d = true, newLabelsToCreate_1 = __asyncValues(newLabelsToCreate), newLabelsToCreate_1_1; newLabelsToCreate_1_1 = yield newLabelsToCreate_1.next(), _a = newLabelsToCreate_1_1.done, !_a;) {
+            _c = newLabelsToCreate_1_1.value;
+            _d = false;
+            try {
+                const { name, description, color } = _c;
+                try {
+                    core.info(`Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`);
+                    yield octokit.rest.issues.createLabel({
+                        owner,
+                        repo,
+                        name: name,
+                        color: color,
+                        description: description,
+                    });
+                }
+                catch (error) {
+                    // Handle unexpected errors
+                    core.info(`Skipped creating label ${name}: ${error.message}`);
+                }
+                finally {
+                    yield sleep(400);
+                }
+            }
+            finally {
+                _d = true;
+            }
+        }
+    }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    finally {
         try {
-            core.info(`Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`);
-            yield octokit.rest.issues.createLabel({
-                owner,
-                repo,
-                name: name,
-                color: color,
-                description: description,
-            });
+            if (!_d && !_a && (_b = newLabelsToCreate_1.return)) yield _b.call(newLabelsToCreate_1);
         }
-        catch (error) {
-            // Handle unexpected errors
-            core.info(`Skipped creating label ${name}: ${error.message}`);
-        }
+        finally { if (e_1) throw e_1.error; }
     }
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColors, wsDir, args) {
