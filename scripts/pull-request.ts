@@ -153,7 +153,8 @@ const createVersionLabels = async (
   owner: string,
   prNumber: number,
   status: any,
-  versionLabelsColors: { patch: string; minor: string; major: string }
+  versionLabelsColors: { patch: string; minor: string; major: string },
+  clearLabels: boolean
 ) => {
   core.info("Creating version labels for new and modified components");
 
@@ -197,6 +198,27 @@ const createVersionLabels = async (
     repo,
     params: {},
   });
+
+  if (clearLabels) {
+    core.info("Clearing all Bit labels from the Pull Request");
+
+    // Remove all Bit labels from the Pull Request
+    for (const label of repoLabels) {
+      if (
+        label.name.endsWith("@patch") ||
+        label.name.endsWith("@major") ||
+        label.name.endsWith("@minor")
+      ) {
+        core.info(`Removing Bit label: ${label.name}`);
+        await octokit.rest.issues.removeLabel({
+          owner,
+          repo,
+          issue_number: prNumber,
+          name: label.name,
+        });
+      }
+    }
+  }
 
   // Define the version pattern
   const componentVersionPattern = /@(major|minor|patch)$/;
@@ -254,6 +276,25 @@ const createVersionLabels = async (
         },
       });
     } catch (error: any) {
+      // Handle rate limit errors
+      if (error.message.includes("rate limit")) {
+        core.info(
+          `Waiting 30 seconds before retrying to create label ${name}: ${error.message}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+        await octokit.request("POST /repos/{owner}/{repo}/labels", {
+          owner,
+          repo,
+          name: name,
+          color: color,
+          description: description,
+          headers: {
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        });
+        continue;
+      }
+
       // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
     }
@@ -305,7 +346,8 @@ export default async function run(
       owner,
       prNumber,
       status,
-      versionLabelsColors
+      versionLabelsColors,
+      core.getBooleanInput("clear-labels")
     );
   }
 
