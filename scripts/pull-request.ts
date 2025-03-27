@@ -156,38 +156,6 @@ const createVersionLabels = async (
   versionLabelsColors: { patch: string; minor: string; major: string },
   clearLabels: boolean
 ) => {
-  if (clearLabels) {
-    const versionLabels = ["patch", "minor", "major"];
-
-    core.info("Clearing all Bit labels from the Pull Request");
-
-    const octokit = getOctokit(githubToken);
-    const prLabels = await paginatedRequest<Label>({
-      octokit,
-      method: "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
-      owner,
-      repo,
-      params: { issue_number: prNumber },
-    });
-
-    // Remove all Bit labels from the Pull Request
-    for (const label of prLabels) {
-      if (
-        label.name.endsWith("@patch") ||
-        label.name.endsWith("@major") ||
-        label.name.endsWith("@minor")
-      ) {
-        core.info(`Removing Bit label: ${label.name}`);
-        await octokit.rest.issues.removeLabel({
-          owner,
-          repo,
-          issue_number: prNumber,
-          name: label.name,
-        });
-      }
-    }
-  }
-
   core.info("Creating version labels for new and modified components");
 
   const versionLabels = [
@@ -230,6 +198,27 @@ const createVersionLabels = async (
     repo,
     params: {},
   });
+
+  if (clearLabels) {
+    core.info("Clearing all Bit labels from the Pull Request");
+
+    // Remove all Bit labels from the Pull Request
+    for (const label of repoLabels) {
+      if (
+        label.name.endsWith("@patch") ||
+        label.name.endsWith("@major") ||
+        label.name.endsWith("@minor")
+      ) {
+        core.info(`Removing Bit label: ${label.name}`);
+        await octokit.rest.issues.removeLabel({
+          owner,
+          repo,
+          issue_number: prNumber,
+          name: label.name,
+        });
+      }
+    }
+  }
 
   // Define the version pattern
   const componentVersionPattern = /@(major|minor|patch)$/;

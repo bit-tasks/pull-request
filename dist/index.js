@@ -11090,32 +11090,6 @@ function paginatedRequest(opts) {
 }
 const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors, clearLabels) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, e_1, _b, _c;
-    if (clearLabels) {
-        const versionLabels = ["patch", "minor", "major"];
-        core.info("Clearing all Bit labels from the Pull Request");
-        const octokit = (0, github_1.getOctokit)(githubToken);
-        const prLabels = yield paginatedRequest({
-            octokit,
-            method: "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
-            owner,
-            repo,
-            params: { issue_number: prNumber },
-        });
-        // Remove all Bit labels from the Pull Request
-        for (const label of prLabels) {
-            if (label.name.endsWith("@patch") ||
-                label.name.endsWith("@major") ||
-                label.name.endsWith("@minor")) {
-                core.info(`Removing Bit label: ${label.name}`);
-                yield octokit.rest.issues.removeLabel({
-                    owner,
-                    repo,
-                    issue_number: prNumber,
-                    name: label.name,
-                });
-            }
-        }
-    }
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
         ...(status.newComponents || []),
@@ -11149,6 +11123,23 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         repo,
         params: {},
     });
+    if (clearLabels) {
+        core.info("Clearing all Bit labels from the Pull Request");
+        // Remove all Bit labels from the Pull Request
+        for (const label of repoLabels) {
+            if (label.name.endsWith("@patch") ||
+                label.name.endsWith("@major") ||
+                label.name.endsWith("@minor")) {
+                core.info(`Removing Bit label: ${label.name}`);
+                yield octokit.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                    name: label.name,
+                });
+            }
+        }
+    }
     // Define the version pattern
     const componentVersionPattern = /@(major|minor|patch)$/;
     // Identify labels to remove
@@ -11195,11 +11186,10 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                     });
                 }
                 catch (error) {
-                    // Handle unexpected errors
-                    // core.info(`Skipped creating label ${name}: ${error.message}`);
+                    // Handle rate limit errors
                     if (error.message.includes("rate limit")) {
-                        core.info(`Waiting 2 minutes before retrying to create label ${name}: ${error.message}`);
-                        yield new Promise((resolve) => setTimeout(resolve, 120000));
+                        core.info(`Waiting 30 seconds before retrying to create label ${name}: ${error.message}`);
+                        yield new Promise((resolve) => setTimeout(resolve, 30000));
                         yield octokit.request("POST /repos/{owner}/{repo}/labels", {
                             owner,
                             repo,
@@ -11212,6 +11202,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                         });
                         continue;
                     }
+                    // Handle unexpected errors
                     core.info(`Skipped creating label ${name}: ${error.message}`);
                 }
             }
