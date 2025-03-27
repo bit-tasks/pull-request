@@ -228,12 +228,6 @@ const createVersionLabels = async (
     }
   }
 
-  const newLabelsToAdd = versionLabels.filter(({ name }) => {
-    return !prLabels.some(
-      (existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]
-    );
-  });
-
   // Determine which labels need to be created in the repository
   const newLabelsToCreate = versionLabels.filter(
     ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
@@ -263,18 +257,6 @@ const createVersionLabels = async (
       // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
     }
-  }
-
-  core.info(`Added ${newLabelsToAdd.length} new labels to the PR`);
-
-  // Add the new labels to the PR
-  if (newLabelsToAdd.length > 0) {
-    await octokit.rest.issues.addLabels({
-      owner,
-      repo,
-      issue_number: prNumber,
-      labels: newLabelsToAdd.map(({ name }) => name),
-    });
   }
 };
 

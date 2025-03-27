@@ -11144,9 +11144,6 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
             });
         }
     }
-    const newLabelsToAdd = versionLabels.filter(({ name }) => {
-        return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]);
-    });
     // Determine which labels need to be created in the repository
     const newLabelsToCreate = versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
     );
@@ -11187,16 +11184,6 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
             if (!_d && !_a && (_b = newLabelsToCreate_1.return)) yield _b.call(newLabelsToCreate_1);
         }
         finally { if (e_1) throw e_1.error; }
-    }
-    core.info(`Added ${newLabelsToAdd.length} new labels to the PR`);
-    // Add the new labels to the PR
-    if (newLabelsToAdd.length > 0) {
-        yield octokit.rest.issues.addLabels({
-            owner,
-            repo,
-            issue_number: prNumber,
-            labels: newLabelsToAdd.map(({ name }) => name),
-        });
     }
 });
 function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColors, wsDir, args) {
