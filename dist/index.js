@@ -11148,7 +11148,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         return !prLabels.some((existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]);
     });
     // Determine which labels need to be created in the repository
-    const newLabelsToCreate = newLabelsToAdd.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
+    const newLabelsToCreate = versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
     );
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
     try {
@@ -11188,13 +11188,14 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         }
         finally { if (e_1) throw e_1.error; }
     }
+    core.info(`Added ${newLabelsToAdd.length} new labels to the PR`);
     // Add the new labels to the PR
-    if (newLabelsToCreate.length > 0) {
+    if (newLabelsToAdd.length > 0) {
         yield octokit.rest.issues.addLabels({
             owner,
             repo,
             issue_number: prNumber,
-            labels: newLabelsToCreate.map(({ name }) => name),
+            labels: newLabelsToAdd.map(({ name }) => name),
         });
     }
 });
