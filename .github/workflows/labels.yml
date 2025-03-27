@@ -20,6 +20,6 @@ jobs:
         with:
             ws-dir: 'test-data'
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@main
+        uses: bit-tasks/pull-request@list-repo-labels
         with:
           version-labels: true
