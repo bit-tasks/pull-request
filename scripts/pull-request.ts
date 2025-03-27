@@ -97,6 +97,56 @@ const getHumanReadableTimestamp = () => {
   return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
+interface PaginatedRequestOptions {
+  octokit: any;
+  method: string;
+  owner: string;
+  repo: string;
+  params: { [key: string]: any };
+}
+
+async function paginatedRequest<T>(
+  opts: PaginatedRequestOptions
+): Promise<T[]> {
+  const { octokit, method, owner, repo, params } = opts;
+  let page = 1;
+  const perPage = 100;
+  const results: T[] = [];
+  let moreResultsExist = true;
+
+  while (moreResultsExist) {
+    const response = await octokit.request(method, {
+      owner,
+      repo,
+      ...params,
+      page,
+      per_page: perPage,
+    });
+
+    const data = response.data;
+
+    // Check if more results exist
+    if (data.length === 0) {
+      moreResultsExist = false;
+    } else {
+      results.push(...data);
+      page++;
+    }
+  }
+
+  return results;
+}
+
+interface Label {
+  id: number;
+  node_id: string;
+  url: string;
+  name: string;
+  description: string | null;
+  color: string;
+  default: boolean;
+}
+
 const createVersionLabels = async (
   githubToken: string,
   repo: string,
@@ -128,39 +178,25 @@ const createVersionLabels = async (
     });
   });
 
-  // Get existing labels on the PR
   const octokit = getOctokit(githubToken);
-  let labelsPage = 1;
-  const labelsPerPage = 100;
-  const prLabels: {
-    id: number;
-    node_id: string;
-    url: string;
-    name: string;
-    description: string | null;
-    color: string;
-    default: boolean;
-  }[] = [];
-  let moreLabelsExist = true;
 
-  while (moreLabelsExist) {
-    const { data: repoLabelsPage } =
-      await octokit.rest.issues.listLabelsOnIssue({
-        owner,
-        repo,
-        page: labelsPage,
-        per_page: labelsPerPage,
-        issue_number: prNumber,
-      });
+  // Get existing labels on the PR
+  const prLabels = await paginatedRequest<Label>({
+    octokit,
+    method: "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
+    owner,
+    repo,
+    params: { issue_number: prNumber },
+  });
 
-    // Check if more labels exist
-    if (repoLabelsPage.length === 0) {
-      moreLabelsExist = false;
-    } else {
-      prLabels.push(...repoLabelsPage);
-      labelsPage++;
-    }
-  }
+  // Get all repository labels with pagination
+  const repoLabels = await paginatedRequest<Label>({
+    octokit,
+    method: "GET /repos/{owner}/{repo}/labels",
+    owner,
+    repo,
+    params: {},
+  });
 
   // Define the version pattern
   const componentVersionPattern = /@(major|minor|patch)$/;
@@ -200,7 +236,7 @@ const createVersionLabels = async (
 
   // Determine which labels need to be created in the repository
   const newLabelsToCreate = newLabelsToAdd.filter(
-    ({ name }) => !prLabels.some((label) => label.name === name) // Labels not in the repository
+    ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
   );
 
   core.info(
@@ -208,22 +244,36 @@ const createVersionLabels = async (
   );
 
   // Create GitHub labels if they do not exist
-  await octokit.request(
-    "POST /repos/{owner}/{repo}/issues/{issue_number}/labels",
-    {
+  for await (const { name, description, color } of newLabelsToCreate) {
+    try {
+      core.info(
+        `Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`
+      );
+      await octokit.request("POST /repos/{owner}/{repo}/labels", {
+        owner,
+        repo,
+        name: name,
+        color: color,
+        description: description,
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+    } catch (error: any) {
+      // Handle unexpected errors
+      core.info(`Skipped creating label ${name}: ${error.message}`);
+    }
+  }
+
+  // Add the new labels to the PR
+  if (newLabelsToCreate.length > 0) {
+    await octokit.rest.issues.addLabels({
       owner,
       repo,
       issue_number: prNumber,
-      labels: newLabelsToCreate.map(({ name, description, color }) => ({
-        name,
-        description,
-        color,
-      })),
-      headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    }
-  );
+      labels: newLabelsToCreate.map(({ name }) => name),
+    });
+  }
 };
 
 export default async function run(
