@@ -265,6 +265,8 @@ const createVersionLabels = async (
     }
   }
 
+  core.info(`Added ${newLabelsToAdd.length} new labels to the PR`);
+
   // Add the new labels to the PR
   if (newLabelsToAdd.length > 0) {
     await octokit.rest.issues.addLabels({
