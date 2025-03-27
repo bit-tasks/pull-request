@@ -165,7 +165,7 @@ const createVersionLabels = async (
 
     // Generate labels for @patch, @major, and @minor
     return (["patch", "major", "minor"] as const).map((version) => {
-      const componentName = `${baseName}@${version}`;
+      const componentName = `t${baseName}@${version}`;
       const name =
         componentName.length > 50 ? componentName.slice(-50) : componentName;
       const description = componentId;
