@@ -255,6 +255,25 @@ const createVersionLabels = async (
       });
     } catch (error: any) {
       // Handle unexpected errors
+      // core.info(`Skipped creating label ${name}: ${error.message}`);
+      if (error.message.includes("rate limit")) {
+        core.info(
+          `Waiting 2 minutes before retrying to create label ${name}: ${error.message}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 120000));
+        await octokit.request("POST /repos/{owner}/{repo}/labels", {
+          owner,
+          repo,
+          name: name,
+          color: color,
+          description: description,
+          headers: {
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        });
+        continue;
+      }
+
       core.info(`Skipped creating label ${name}: ${error.message}`);
     }
   }

@@ -20,6 +20,6 @@ jobs:
         with:
             ws-dir: 'test-data'
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@main
+        uses: bit-tasks/pull-request@update-test-data-4
         with:
           version-labels: true
