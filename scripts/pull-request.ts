@@ -235,7 +235,7 @@ const createVersionLabels = async (
   });
 
   // Determine which labels need to be created in the repository
-  const newLabelsToCreate = newLabelsToAdd.filter(
+  const newLabelsToCreate = versionLabels.filter(
     ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
   );
 
@@ -266,12 +266,12 @@ const createVersionLabels = async (
   }
 
   // Add the new labels to the PR
-  if (newLabelsToCreate.length > 0) {
+  if (newLabelsToAdd.length > 0) {
     await octokit.rest.issues.addLabels({
       owner,
       repo,
       issue_number: prNumber,
-      labels: newLabelsToCreate.map(({ name }) => name),
+      labels: newLabelsToAdd.map(({ name }) => name),
     });
   }
 };
