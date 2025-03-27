@@ -287,13 +287,12 @@ const createVersionLabels = async (
         },
       });
     } catch (error: any) {
-      // Handle unexpected errors
-      // core.info(`Skipped creating label ${name}: ${error.message}`);
+      // Handle rate limit errors
       if (error.message.includes("rate limit")) {
         core.info(
-          `Waiting 2 minutes before retrying to create label ${name}: ${error.message}`
+          `Waiting 30 seconds before retrying to create label ${name}: ${error.message}`
         );
-        await new Promise((resolve) => setTimeout(resolve, 120000));
+        await new Promise((resolve) => setTimeout(resolve, 30000));
         await octokit.request("POST /repos/{owner}/{repo}/labels", {
           owner,
           repo,
@@ -307,6 +306,7 @@ const createVersionLabels = async (
         continue;
       }
 
+      // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
     }
   }
