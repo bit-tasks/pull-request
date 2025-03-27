@@ -11098,7 +11098,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         const baseName = componentId.substring(componentId.indexOf("/") + 1);
         // Generate labels for @patch, @major, and @minor
         return ["patch", "major", "minor"].map((version) => {
-            const componentName = `${baseName}@${version}`;
+            const componentName = `t${baseName}@${version}`;
             const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
             const description = componentId;
             const color = versionLabelsColors[version];
@@ -11170,6 +11170,22 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                 }
                 catch (error) {
                     // Handle unexpected errors
+                    // core.info(`Skipped creating label ${name}: ${error.message}`);
+                    if (error.message.includes("rate limit")) {
+                        core.info(`Waiting 2 minutes before retrying to create label ${name}: ${error.message}`);
+                        yield new Promise((resolve) => setTimeout(resolve, 120000));
+                        yield octokit.request("POST /repos/{owner}/{repo}/labels", {
+                            owner,
+                            repo,
+                            name: name,
+                            color: color,
+                            description: description,
+                            headers: {
+                                "X-GitHub-Api-Version": "2022-11-28",
+                            },
+                        });
+                        continue;
+                    }
                     core.info(`Skipped creating label ${name}: ${error.message}`);
                 }
             }
