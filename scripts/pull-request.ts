@@ -97,7 +97,55 @@ const getHumanReadableTimestamp = () => {
   return new Date().toLocaleString("en-US", options as any) + " UTC";
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+interface PaginatedRequestOptions {
+  octokit: any;
+  method: string;
+  owner: string;
+  repo: string;
+  params: { [key: string]: any };
+}
+
+async function paginatedRequest<T>(
+  opts: PaginatedRequestOptions
+): Promise<T[]> {
+  const { octokit, method, owner, repo, params } = opts;
+  let page = 1;
+  const perPage = 100;
+  const results: T[] = [];
+  let moreResultsExist = true;
+
+  while (moreResultsExist) {
+    const response = await octokit.request(method, {
+      owner,
+      repo,
+      ...params,
+      page,
+      per_page: perPage,
+    });
+
+    const data = response.data;
+
+    // Check if more results exist
+    if (data.length === 0) {
+      moreResultsExist = false;
+    } else {
+      results.push(...data);
+      page++;
+    }
+  }
+
+  return results;
+}
+
+interface Label {
+  id: number;
+  node_id: string;
+  url: string;
+  name: string;
+  description: string | null;
+  color: string;
+  default: boolean;
+}
 
 const createVersionLabels = async (
   githubToken: string,
@@ -121,8 +169,7 @@ const createVersionLabels = async (
       const name =
         componentName.length > 50 ? componentName.slice(-50) : componentName;
       const description = componentId;
-      const color =
-        versionLabelsColors[version];
+      const color = versionLabelsColors[version];
 
       core.info(
         `Processing label: ${name} with description: ${description} and color: #${color}`
@@ -131,12 +178,24 @@ const createVersionLabels = async (
     });
   });
 
-  // Get existing labels on the PR
   const octokit = getOctokit(githubToken);
-  const { data: prLabels } = await octokit.rest.issues.listLabelsOnIssue({
+
+  // Get existing labels on the PR
+  const prLabels = await paginatedRequest<Label>({
+    octokit,
+    method: "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
     owner,
     repo,
-    issue_number: prNumber,
+    params: { issue_number: prNumber },
+  });
+
+  // Get all repository labels with pagination
+  const repoLabels = await paginatedRequest<Label>({
+    octokit,
+    method: "GET /repos/{owner}/{repo}/labels",
+    owner,
+    repo,
+    params: {},
   });
 
   // Define the version pattern
@@ -169,21 +228,9 @@ const createVersionLabels = async (
     }
   }
 
-  // Get all labels in the repository
-  const { data: repoLabels } = await octokit.rest.issues.listLabelsForRepo({
-    owner,
-    repo,
-  });
-
-  const newLabelsToAdd = versionLabels.filter(({ name }) => {
-    return !prLabels.some(
-      (existingLabel) => existingLabel.name.split("@")[0] === name.split("@")[0]
-    );
-  });
-
   // Determine which labels need to be created in the repository
-  const newLabelsToCreate = newLabelsToAdd.filter(
-    ({ name }) => !repoLabels.some((repoLabel) => repoLabel.name === name) // Labels not in the repository
+  const newLabelsToCreate = versionLabels.filter(
+    ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
   );
 
   core.info(
@@ -196,18 +243,19 @@ const createVersionLabels = async (
       core.info(
         `Creating GitHub repository label: ${name} with description: ${description} and color: #${color}`
       );
-      await octokit.rest.issues.createLabel({
+      await octokit.request("POST /repos/{owner}/{repo}/labels", {
         owner,
         repo,
         name: name,
         color: color,
         description: description,
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
       });
     } catch (error: any) {
       // Handle unexpected errors
       core.info(`Skipped creating label ${name}: ${error.message}`);
-    } finally {
-      await sleep(400);
     }
   }
 };
@@ -276,22 +324,16 @@ export default async function run(
 
   try {
     const lane = `${org}.${scope}/${laneName}`;
-    core.info(`Attempting to remove Bit lane if it exists: ${lane}`)
+    core.info(`Attempting to remove Bit lane if it exists: ${lane}`);
     await exec(
       "bit",
-      [
-        "lane",
-        "remove",
-        lane,
-        "--remote",
-        "--silent",
-        "--force",
-        ...args,
-      ],
+      ["lane", "remove", lane, "--remote", "--silent", "--force", ...args],
       { cwd: wsDir }
     );
   } catch (error) {
-    core.info("Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it.")
+    core.info(
+      "Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it."
+    );
   }
   await exec("bit", ["export", ...args], { cwd: wsDir });
 
