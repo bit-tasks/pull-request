@@ -23,3 +23,4 @@ jobs:
         uses: bit-tasks/pull-request@update-test-data-4
         with:
           version-labels: true
+          clear-labels: true

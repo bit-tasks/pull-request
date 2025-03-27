@@ -11088,8 +11088,34 @@ function paginatedRequest(opts) {
         return results;
     });
 }
-const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors) => __awaiter(void 0, void 0, void 0, function* () {
+const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors, clearLabels) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, e_1, _b, _c;
+    if (clearLabels) {
+        const versionLabels = ["patch", "minor", "major"];
+        core.info("Clearing all Bit labels from the Pull Request");
+        const octokit = (0, github_1.getOctokit)(githubToken);
+        const prLabels = yield paginatedRequest({
+            octokit,
+            method: "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
+            owner,
+            repo,
+            params: { issue_number: prNumber },
+        });
+        // Remove all Bit labels from the Pull Request
+        for (const label of prLabels) {
+            if (label.name.endsWith("@patch") ||
+                label.name.endsWith("@major") ||
+                label.name.endsWith("@minor")) {
+                core.info(`Removing Bit label: ${label.name}`);
+                yield octokit.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                    name: label.name,
+                });
+            }
+        }
+    }
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
         ...(status.newComponents || []),
@@ -11098,7 +11124,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         const baseName = componentId.substring(componentId.indexOf("/") + 1);
         // Generate labels for @patch, @major, and @minor
         return ["patch", "major", "minor"].map((version) => {
-            const componentName = `t${baseName}@${version}`;
+            const componentName = `${baseName}@${version}`;
             const name = componentName.length > 50 ? componentName.slice(-50) : componentName;
             const description = componentId;
             const color = versionLabelsColors[version];
@@ -11229,7 +11255,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
         }); // Avoid log param, since output is parsed for next steps
         const status = JSON.parse(statusRaw.trim());
         if (versionLabel) {
-            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors);
+            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors, core.getBooleanInput("clear-labels"));
         }
         yield (0, exec_1.exec)("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);

@@ -22,6 +22,10 @@ inputs:
       description: "Specify the hex color code for automatically created patch version labels."
       required: false
       default: "c2e0c6"
+  clear-labels:
+      description: "Remove all Bit labels from the Pull Request"
+      required: false
+      default: "false"
 runs:
   using: 'node20'
   main: 'dist/index.js'
