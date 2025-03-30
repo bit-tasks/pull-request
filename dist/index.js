@@ -11088,7 +11088,7 @@ function paginatedRequest(opts) {
         return results;
     });
 }
-const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors) => __awaiter(void 0, void 0, void 0, function* () {
+const createVersionLabels = (githubToken, repo, owner, prNumber, status, versionLabelsColors, clearLabels) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, e_1, _b, _c;
     core.info("Creating version labels for new and modified components");
     const versionLabels = [
@@ -11123,6 +11123,22 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         repo,
         params: {},
     });
+    if (clearLabels) {
+        core.info("Clearing all Bit labels from the Pull Request");
+        // Remove all Bit labels from the Pull Request
+        for (const label of repoLabels) {
+            if (label.name.endsWith("@patch") ||
+                label.name.endsWith("@major") ||
+                label.name.endsWith("@minor")) {
+                core.info(`Removing Bit label: ${label.name}`);
+                yield octokit.request("DELETE /repos/{owner}/{repo}/labels/{name}", {
+                    owner,
+                    repo,
+                    name: label.name,
+                });
+            }
+        }
+    }
     // Define the version pattern
     const componentVersionPattern = /@(major|minor|patch)$/;
     // Identify labels to remove
@@ -11145,8 +11161,11 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         }
     }
     // Determine which labels need to be created in the repository
-    const newLabelsToCreate = versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
-    );
+    const newLabelsToCreate = clearLabels
+        ? // if clearing labels, create all labels again
+            versionLabels
+        : versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
+        );
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
     try {
         // Create GitHub labels if they do not exist
@@ -11169,6 +11188,22 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                     });
                 }
                 catch (error) {
+                    // Handle rate limit errors
+                    if (error.message.includes("rate limit")) {
+                        core.info(`Waiting 30 seconds before retrying to create label ${name}: ${error.message}`);
+                        yield new Promise((resolve) => setTimeout(resolve, 30000));
+                        yield octokit.request("POST /repos/{owner}/{repo}/labels", {
+                            owner,
+                            repo,
+                            name: name,
+                            color: color,
+                            description: description,
+                            headers: {
+                                "X-GitHub-Api-Version": "2022-11-28",
+                            },
+                        });
+                        continue;
+                    }
                     // Handle unexpected errors
                     core.info(`Skipped creating label ${name}: ${error.message}`);
                 }
@@ -11213,7 +11248,7 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
         }); // Avoid log param, since output is parsed for next steps
         const status = JSON.parse(statusRaw.trim());
         if (versionLabel) {
-            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors);
+            yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors, core.getBooleanInput("clear-labels"));
         }
         yield (0, exec_1.exec)("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);

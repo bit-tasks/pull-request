@@ -1,0 +1,5 @@
+import { sampleComponent43 } from './sample-component-43.js';
+
+it('renders with the correct text', () => {
+  expect(sampleComponent43()).toEqual('hello world');
+});
