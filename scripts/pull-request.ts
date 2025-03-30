@@ -210,10 +210,9 @@ const createVersionLabels = async (
         label.name.endsWith("@minor")
       ) {
         core.info(`Removing Bit label: ${label.name}`);
-        await octokit.rest.issues.removeLabel({
+        await octokit.request("DELETE /repos/{owner}/{repo}/labels/{name}", {
           owner,
           repo,
-          issue_number: prNumber,
           name: label.name,
         });
       }

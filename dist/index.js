@@ -11131,10 +11131,9 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
                 label.name.endsWith("@major") ||
                 label.name.endsWith("@minor")) {
                 core.info(`Removing Bit label: ${label.name}`);
-                yield octokit.rest.issues.removeLabel({
+                yield octokit.request("DELETE /repos/{owner}/{repo}/labels/{name}", {
                     owner,
                     repo,
-                    issue_number: prNumber,
                     name: label.name,
                 });
             }
