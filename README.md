@@ -1,4 +1,5 @@
 # Verify Components in a Pull Request for CI/CD Pipelines
+
 Verify the pull request along with the modifications for the Bit components.
 
 # GitHub Actions
@@ -24,6 +25,7 @@ By default, the label is automatically created in the format `component-name@<ve
 When modifying or creating labels manually, supported version keywords for component-specific labels are: `major`, `minor`, and `patch`.
 
 #### Example:
+
 - By default, the `patch` label is automatically added as: `ui/button@patch`.
 - It can be modified manually to force a minor version bump: `ui/button@minor`.
 
@@ -55,6 +57,10 @@ For example:
     version-labels-color-major: 'C2E0C6'
 ```
 
+### `clear-labels`
+
+**Optional** When set to `true`, this task automatically removes all Bit labels from the repository. The default value is `false`.
+
 ## Example usage
 
 **Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v2`.
@@ -82,11 +88,11 @@ jobs:
       - name: Initialize Bit
         uses: bit-tasks/init@v1
         with:
-          ws-dir: '<WORKSPACE_DIR_PATH>'
+          ws-dir: "<WORKSPACE_DIR_PATH>"
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@v2
         with:
-          version-labels: true  # Optional: Add version labels to PR
+          version-labels: true # Optional: Add version labels to PR
 ```
 
 # Contributor Guide
