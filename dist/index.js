@@ -11161,8 +11161,11 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         }
     }
     // Determine which labels need to be created in the repository
-    const newLabelsToCreate = versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
-    );
+    const newLabelsToCreate = clearLabels
+        ? // if clearing labels, create all labels again
+            versionLabels
+        : versionLabels.filter(({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
+        );
     core.info(`Creating ${newLabelsToCreate.length} new labels in the repository`);
     try {
         // Create GitHub labels if they do not exist
