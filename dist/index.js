@@ -11075,9 +11075,9 @@ function run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, s
             "ci",
             "pr",
             "--lane",
-            laneName,
+            `${org}.${scope}/${laneName}`,
             "--message",
-            messageText,
+            `"${messageText}"`,
         ];
         if (build) {
             cliArgs.push("--build");

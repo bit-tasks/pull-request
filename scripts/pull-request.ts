@@ -129,9 +129,9 @@ export default async function run(
     "ci",
     "pr",
     "--lane",
-    laneName,
+    `${org}.${scope}/${laneName}`,
     "--message",
-    messageText,
+    `"${messageText}"`,
   ]
 
   if (build) {
