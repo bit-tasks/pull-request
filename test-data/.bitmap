@@ -13,9 +13,9 @@
         "name": "get-message",
         "scope": "",
         "version": "",
-        "defaultScope": "acme.scope",
+        "defaultScope": "frontend.ci-scripts-tests",
         "mainFile": "index.ts",
-        "rootDir": "scope/get-message",
+        "rootDir": "ci-scripts-tests/get-message",
         "config": {
             "bitdev.react/react-env@4.1.9": {},
             "teambit.envs/envs": {
@@ -27,9 +27,9 @@
         "name": "my-app",
         "scope": "",
         "version": "",
-        "defaultScope": "acme.scope",
+        "defaultScope": "frontend.ci-scripts-tests",
         "mainFile": "index.ts",
-        "rootDir": "scope/my-app",
+        "rootDir": "ci-scripts-tests/my-app",
         "config": {
             "bitdev.react/react-env@4.1.9": {},
             "teambit.envs/envs": {
@@ -41,9 +41,9 @@
         "name": "my-env",
         "scope": "",
         "version": "",
-        "defaultScope": "acme.scope",
+        "defaultScope": "frontend.ci-scripts-tests",
         "mainFile": "index.ts",
-        "rootDir": "scope/my-env",
+        "rootDir": "ci-scripts-tests/my-env",
         "config": {
             "bitdev.general/envs/bit-env@3.0.4": {},
             "teambit.envs/envs": {

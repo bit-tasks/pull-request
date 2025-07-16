@@ -10,7 +10,7 @@
     "name": "test-data",
     "icon": "https://static.bit.dev/brands/bit-logo-min.png",
     "defaultDirectory": "{scope}/{name}",
-    "defaultScope": "acme.scope",
+    "defaultScope": "frontend.ci-scripts-tests",
     "resolveAspectsFromNodeModules": true,
     "resolveEnvsFromRoots": true
   },
