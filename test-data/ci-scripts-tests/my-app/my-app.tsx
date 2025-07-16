@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { GetMessage } from '@acme/scope.get-message';
+import { GetMessage } from '@frontend/ci-scripts-tests.get-message';
 
 export function MyApp() {
   return (
