@@ -11088,9 +11088,7 @@ function run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, s
         cliArgs.push(...args);
         yield (0, exec_1.exec)("bit", cliArgs, {
             cwd: wsDir,
-            env: {
-                BIT_DISABLE_SPINNER: "false"
-            }
+            env: Object.assign(Object.assign({}, process.env), { BIT_DISABLE_SPINNER: "false" })
         });
         postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     });

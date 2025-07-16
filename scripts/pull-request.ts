@@ -150,6 +150,7 @@ export default async function run(
     {
       cwd: wsDir,
       env: {
+        ...process.env,
         BIT_DISABLE_SPINNER: "false"
       }
     }
