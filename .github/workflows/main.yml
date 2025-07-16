@@ -21,9 +21,9 @@ jobs:
         with:
             ws-dir: 'test-data'
       - name: Creating a bare scope
-        run: mkdir bit-tasks.test-scope && cd bit-tasks.test-scope && bit init --bare
+        run: mkdir acme.scope && cd acme.scope && bit init --bare
       - name: Start the server and test
-        run: cd bit-tasks.test-scope && bit start --port 4000 --no-browser & sleep 200 && curl http://localhost:4000 
+        run: cd acme.scope && bit start --port 4000 --no-browser & sleep 200 && curl http://localhost:4000 
       - name: Add remote scope
         run: cd test-data && bit remote add http://localhost:4000   
       - name: Bit Pull Request
