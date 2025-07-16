@@ -149,6 +149,9 @@ export default async function run(
     cliArgs,
     {
       cwd: wsDir,
+      env: {
+        BIT_DISABLE_SPINNER: "false"
+      }
     }
   );
 
