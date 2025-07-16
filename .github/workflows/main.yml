@@ -1,10 +1,10 @@
 name: Test Bit Pull Request
 on:
-  workflow_dispatch:   # Manual trigger
-  # pull_request:
-  #   types:
-  #     - opened
-  #     - synchronize
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
 permissions:
   pull-requests: write
 jobs:
