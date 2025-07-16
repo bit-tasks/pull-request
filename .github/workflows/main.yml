@@ -20,12 +20,6 @@ jobs:
         uses: bit-tasks/init@v2
         with:
             ws-dir: 'test-data'
-      - name: Creating a bare scope
-        run: mkdir acme.scope && cd acme.scope && bit init --bare
-      - name: Start the server and test
-        run: cd acme.scope && bit start --port 4000 --no-browser & sleep 200 && curl http://localhost:4000 
-      - name: Add remote scope
-        run: cd test-data && bit remote add http://localhost:4000   
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@use-ci-scripts
       - name: Bit Lanes
