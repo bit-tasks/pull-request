@@ -27,6 +27,6 @@ jobs:
       - name: Add remote scope
         run: cd test-data && bit remote add http://localhost:4000   
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@main
+        uses: bit-tasks/pull-request@use-ci-scripts
       - name: Bit Lanes
         run: cd test-data && bit lane list --details

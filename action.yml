@@ -7,25 +7,14 @@ inputs:
   ws-dir:
     description: "Workspace json file directory path"
     required: false
-  version-labels:
-      description: "Include semantic version labels for new/modified components"
-      required: false
-  version-labels-color-major:
-      description: "Specify the hex color code for automatically created major version labels."
-      required: false
-      default: "f0a09f"
-  version-labels-color-minor:
-      description: "Specify the hex color code for automatically created minor version labels."
-      required: false
-      default: "f0e8bd"
-  version-labels-color-patch:
-      description: "Specify the hex color code for automatically created patch version labels."
-      required: false
-      default: "c2e0c6"
-  clear-labels:
-      description: "Remove all Bit labels from the Pull Request"
-      required: false
-      default: "false"
+  build:
+    description: "Build components in the Action Runner."
+    required: false
+    default: "false"
+  strict:
+    description: "Fail on warnings as well as errors."
+    required: false
+    default: "false"
 runs:
   using: 'node20'
   main: 'dist/index.js'

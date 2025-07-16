@@ -7,27 +7,10 @@
    * main configuration of the Bit workspace.
    **/
   "teambit.workspace/workspace": {
-    /**
-     * the name of the component workspace. used for development purposes.
-     **/
     "name": "test-data",
-    /**
-     * set the icon to be shown on the Bit server.
-     **/
     "icon": "https://static.bit.dev/brands/bit-logo-min.png",
-    /**
-     * default directory to place a component during `bit import` and `bit create`.
-     * the following placeholders are available:
-     * name - component name includes namespace, e.g. 'ui/button'.
-     * scopeId - full scope-id includes the owner, e.g. 'teambit.compilation'.
-     * scope - scope name only, e.g. 'compilation'.
-     * owner - owner name in bit.dev, e.g. 'teambit'.
-     **/
     "defaultDirectory": "{scope}/{name}",
-    /**
-     * default scope for all components in workspace.
-     **/
-    "defaultScope": "bit-tasks.test-scope",
+    "defaultScope": "acme.scope",
     "resolveAspectsFromNodeModules": true,
     "resolveEnvsFromRoots": true
   },
@@ -39,29 +22,24 @@
   **/
   "teambit.generator/generator": {
     "envs": [
-      //  "bitdev.node/node-env",
-      //  "bitdev.react/react-env",
-      //  "bitdev.vue/vue-env",
-      //  "bitdev.angular/angular-env"
+      "bitdev.node/node-env",
+      "bitdev.react/react-env"
+      // "bitdev.vue/vue-env",
+      // "bitdev.angular/angular-env"
+      // "bitdev.symphony/envs/symphony-env"
     ]
   },
   /**
    * main configuration for component dependency resolution.
    **/
   "teambit.dependencies/dependency-resolver": {
-    /**
-     * choose the package manager for Bit to use. you can choose between 'yarn', 'pnpm'
-     */
-    "packageManager": "teambit.dependencies/pnpm",
     "policy": {
       "dependencies": {
-        "@bitdev/react.app-types.vite-react": "^2.1.2",
-        "@learnbit/hello-world.get-hello-world": "^0.0.15",
-        "@learnbit/hello-world.ui.hello-world": "^0.0.19",
-        "@teambit/node.node": "^1.0.101",
-        "@teambit/react.apps.react-app-types": "^2.0.5",
-        "@teambit/react.react-env": "^1.0.109",
-        "@vitejs/plugin-react": "^4.3.2"
+        "@bitdev/react.app-types.vite-react": "^2.1.7",
+        "@bitdev/react.preview.react-docs-template": "^0.0.7",
+        "@bitdev/react.react-env": "^4.1.9",
+        "@teambit/react.mounter": "^1.0.49",
+        "@vitejs/plugin-react": "^4.6.0"
       },
       "peerDependencies": {}
     },
@@ -71,5 +49,7 @@
   "teambit.workspace/workspace-config-files": {
     "enableWorkspaceConfigWrite": true
   },
-  "bit-tasks.test-scope/apps/my-app": {}
+  "teambit.harmony/bit": {
+    "engine": "1.11.42"
+  }
 }

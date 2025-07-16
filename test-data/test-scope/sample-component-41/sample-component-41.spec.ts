@@ -1,5 +1,0 @@
-import { sampleComponent41 } from './sample-component-41.js';
-
-it('renders with the correct text', () => {
-  expect(sampleComponent41()).toEqual('hello world');
-});

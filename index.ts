@@ -5,12 +5,9 @@ import run from "./scripts/pull-request";
 try {
   const githubToken = process.env.GITHUB_TOKEN;
   const wsDir: string = core.getInput("ws-dir") || process.env.WSDIR || "./";
-  const versionLabels: boolean = core.getInput("version-labels") === "true" ? true : false;
-  const versionLabelsColors = {
-    major:  core.getInput("version-labels-color-major"),
-    minor:  core.getInput("version-labels-color-minor"),
-    patch:  core.getInput("version-labels-color-patch")
-  };
+  const build: boolean = core.getInput("build") === "true" ? true : false;
+  const strict: boolean = core.getInput("strict") === "true" ? true : false;
+
   const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
   const prNumber = context?.payload?.pull_request?.number;
   const { owner, repo } = context?.repo;
@@ -24,7 +21,7 @@ try {
   }
 
   const laneName = `pr-${prNumber?.toString()}`;
-  run(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColors, wsDir, args);
+  run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict);
 } catch (error) {
   core.setFailed((error as Error).message);
 }
