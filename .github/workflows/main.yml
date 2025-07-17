@@ -22,5 +22,11 @@ jobs:
             ws-dir: 'test-data'
       - name: Bit Pull Request
         uses: bit-tasks/pull-request@use-ci-scripts
+        with:
+          version-labels: true
+          version-labels-color-major: "f0a09f"
+          version-labels-color-minor: "f0e8bd"
+          version-labels-color-patch: "c2e0c6"
+          clear-labels: true
       - name: Bit Lanes
         run: cd test-data && bit lane list --details
