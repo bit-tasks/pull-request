@@ -61,6 +61,14 @@ For example:
 
 **Optional** When set to `true`, this task automatically removes all Bit labels from the repository. The default value is `false`.
 
+### `build`
+
+**Optional** Build components in the Action Runner. The default value is `false`.
+
+### `strict`
+
+**Optional** Fail on warnings as well as errors. The default value is `false`.
+
 ## Example usage
 
 **Note:** Use `bit-task/init@v1` as a prior step in your action before running `bit-tasks/pull-request@v2`.

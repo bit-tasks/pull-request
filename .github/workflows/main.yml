@@ -21,7 +21,7 @@ jobs:
         with:
             ws-dir: 'test-data'
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@use-ci-scripts
+        uses: bit-tasks/pull-request@main
         with:
           version-labels: true
           version-labels-color-major: "f0a09f"
