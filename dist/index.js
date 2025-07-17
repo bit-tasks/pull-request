@@ -10885,6 +10885,8 @@ const pull_request_1 = __importDefault(__nccwpck_require__(595));
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
+    const build = core.getInput("build") === "true" ? true : false;
+    const strict = core.getInput("strict") === "true" ? true : false;
     const versionLabels = core.getInput("version-labels") === "true" ? true : false;
     const versionLabelsColors = {
         major: core.getInput("version-labels-color-major"),
@@ -10901,7 +10903,7 @@ try {
         throw new Error("Pull Request number is not found");
     }
     const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
-    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, versionLabels, versionLabelsColors, wsDir, args);
+    (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict, versionLabels, versionLabelsColors);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -11221,7 +11223,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
         finally { if (e_1) throw e_1.error; }
     }
 });
-function run(githubToken, repo, owner, prNumber, laneName, versionLabel, versionLabelsColors, wsDir, args) {
+function run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict, versionLabel, versionLabelsColors) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const org = process.env.ORG;
@@ -11250,21 +11252,27 @@ function run(githubToken, repo, owner, prNumber, laneName, versionLabel, version
         if (versionLabel) {
             yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors, core.getBooleanInput("clear-labels"));
         }
-        yield (0, exec_1.exec)("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-        const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
-        yield (0, exec_1.exec)("bit", ["snap", "-m", snapMessageText, ...buildFlag, ...args], {
+        const lane = `${org}.${scope}/${laneName}`;
+        const cliArgs = [
+            "ci",
+            "pr",
+            "--lane",
+            lane,
+            "--message",
+            snapMessageText,
+            ...args,
+        ];
+        if (build) {
+            cliArgs.push("--build");
+        }
+        if (strict) {
+            cliArgs.push("--strict");
+        }
+        yield (0, exec_1.exec)("bit", cliArgs, {
             cwd: wsDir,
+            env: Object.assign(Object.assign({}, process.env), { BIT_DISABLE_SPINNER: "false" })
         });
-        try {
-            const lane = `${org}.${scope}/${laneName}`;
-            core.info(`Attempting to remove Bit lane if it exists: ${lane}`);
-            yield (0, exec_1.exec)("bit", ["lane", "remove", lane, "--remote", "--silent", "--force", ...args], { cwd: wsDir });
-        }
-        catch (error) {
-            core.info("Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it.");
-        }
-        yield (0, exec_1.exec)("bit", ["export", ...args], { cwd: wsDir });
         postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
     });
 }

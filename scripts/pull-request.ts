@@ -252,10 +252,10 @@ const createVersionLabels = async (
   // Determine which labels need to be created in the repository
   const newLabelsToCreate = clearLabels
     ? // if clearing labels, create all labels again
-      versionLabels
+    versionLabels
     : versionLabels.filter(
-        ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
-      );
+      ({ name }) => !repoLabels.some((label) => label.name === name) // Labels not in the repository
+    );
 
   core.info(
     `Creating ${newLabelsToCreate.length} new labels in the repository`
@@ -309,10 +309,12 @@ export default async function run(
   owner: string,
   prNumber: number,
   laneName: string,
+  wsDir: string,
+  args: string[],
+  build: boolean,
+  strict: boolean,
   versionLabel: boolean,
   versionLabelsColors: { patch: string; minor: string; major: string },
-  wsDir: string,
-  args: string[]
 ) {
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
@@ -353,7 +355,6 @@ export default async function run(
     );
   }
 
-  await exec("bit", ["lane", "create", laneName, ...args], { cwd: wsDir });
   const snapMessageText = await createSnapMessageText(
     githubToken,
     repo,
@@ -361,25 +362,32 @@ export default async function run(
     prNumber
   );
 
-  const buildFlag = process.env.RIPPLE === "true" ? [] : ["--build"];
-  await exec("bit", ["snap", "-m", snapMessageText, ...buildFlag, ...args], {
-    cwd: wsDir,
-  });
+  const lane = `${org}.${scope}/${laneName}`;
+  const cliArgs = [
+    "ci",
+    "pr",
+    "--lane",
+    lane,
+    "--message",
+    snapMessageText,
+    ...args,
+  ];
 
-  try {
-    const lane = `${org}.${scope}/${laneName}`;
-    core.info(`Attempting to remove Bit lane if it exists: ${lane}`);
-    await exec(
-      "bit",
-      ["lane", "remove", lane, "--remote", "--silent", "--force", ...args],
-      { cwd: wsDir }
-    );
-  } catch (error) {
-    core.info(
-      "Cannot remove Bit lane. The lane may not exist, or the Bit token may not have sufficient permissions to remove it."
-    );
+  if (build) {
+    cliArgs.push("--build");
   }
-  await exec("bit", ["export", ...args], { cwd: wsDir });
+
+  if (strict) {
+    cliArgs.push("--strict");
+  }
+
+  await exec("bit", cliArgs, {
+    cwd: wsDir,
+    env: {
+      ...process.env,
+      BIT_DISABLE_SPINNER: "false",
+    }
+  });
 
   postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
 }

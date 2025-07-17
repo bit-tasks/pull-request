@@ -26,7 +26,14 @@ inputs:
       description: "Remove all Bit labels from the Pull Request"
       required: false
       default: "false"
+  build:
+    description: "Build components in the Action Runner."
+    required: false
+    default: "false"
+  strict:
+    description: "Fail on warnings as well as errors."
+    required: false
+    default: "false"
 runs:
   using: 'node20'
   main: 'dist/index.js'
-
