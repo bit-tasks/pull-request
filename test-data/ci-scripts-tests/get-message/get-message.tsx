@@ -10,7 +10,7 @@ export type GetMessageProps = {
 export function GetMessage({ children }: GetMessageProps) {
   return (
     <div>
-      {children}
+      {children}!
     </div>
   );
 }
