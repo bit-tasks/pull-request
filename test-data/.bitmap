@@ -17,9 +17,9 @@
         "mainFile": "index.ts",
         "rootDir": "ci-scripts-tests/get-message",
         "config": {
-            "bitdev.react/react-env@4.1.9": {},
+            "frontend.ci-scripts-tests/my-env": {},
             "teambit.envs/envs": {
-                "env": "bitdev.react/react-env"
+                "env": "frontend.ci-scripts-tests/my-env"
             }
         }
     },
@@ -31,9 +31,9 @@
         "mainFile": "index.ts",
         "rootDir": "ci-scripts-tests/my-app",
         "config": {
-            "bitdev.react/react-env@4.1.9": {},
+            "frontend.ci-scripts-tests/my-env": {},
             "teambit.envs/envs": {
-                "env": "bitdev.react/react-env"
+                "env": "frontend.ci-scripts-tests/my-env"
             }
         }
     },
