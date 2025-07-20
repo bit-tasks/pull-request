@@ -1,6 +1,7 @@
-import { exec } from "@actions/exec";
+import { exec, getExecOutput } from "@actions/exec";
 import { getOctokit } from "@actions/github";
 import * as core from "@actions/core";
+import semver from "semver";
 import { scopeQuery } from "./graphql";
 
 const createSnapMessageText = async (
@@ -316,6 +317,16 @@ export default async function run(
   versionLabel: boolean,
   versionLabelsColors: { patch: string; minor: string; major: string },
 ) {
+  const version = await getExecOutput("bit -v", [], { cwd: wsDir });
+
+  // If the version is lower than 1.11.42, throw an error recommending to downgrade the action version to v2
+  // or upgrade Bit to ^1.11.42
+  if (semver.lt(version.stdout.trim(), "1.11.42")) {
+    throw new Error(
+      "Bit version is lower than 1.11.42. Please downgrade the action version to v2, or upgrade Bit to ^1.11.42"
+    );
+  }
+
   const org = process.env.ORG;
   const scope = process.env.SCOPE;
   const token = process.env.BIT_CONFIG_USER_TOKEN || "";
