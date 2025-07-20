@@ -2,6 +2,8 @@
 
 Verify the pull request along with the modifications for the Bit components.
 
+*Important*: `bit-tasks/pull-request@v3` requires Bit version `^1.11.42`, if you need to use a lower version, use `bit-tasks/pull-request@v2`.
+
 # GitHub Actions
 
 This task creates a Bit lane and adds the component changes for you to verify any components inside a Pull request.
@@ -51,7 +53,7 @@ For example:
 
 ```
 - name: Bit Pull Request
-  uses: bit-tasks/pull-request@v2
+  uses: bit-tasks/pull-request@v3
   with:
     version-labels: true
     version-labels-color-major: 'C2E0C6'
@@ -98,7 +100,7 @@ jobs:
         with:
           ws-dir: "<WORKSPACE_DIR_PATH>"
       - name: Bit Pull Request
-        uses: bit-tasks/pull-request@v2
+        uses: bit-tasks/pull-request@v3
         with:
           version-labels: true # Optional: Add version labels to PR
 ```
@@ -115,7 +117,7 @@ Go to the GithHub action task directory and build using NCC compiler. For exampl
 npm install
 npm run build
 git commit -m "Update task"
-git tag -a -m "action release" v2 --force
+git tag -a -m "action release" v3 --force
 git push --follow-tags
 ```
 
