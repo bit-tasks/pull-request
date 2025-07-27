@@ -3,6 +3,7 @@ import { getOctokit } from "@actions/github";
 import * as core from "@actions/core";
 import semver from "semver";
 import { scopeQuery } from "./graphql";
+import { bitLaneRegex } from "./bit-lanes";
 
 const createSnapMessageText = async (
   githubToken: string,
@@ -317,6 +318,7 @@ export default async function run(
   versionLabel: boolean,
   versionLabelsColors: { patch: string; minor: string; major: string },
 ) {
+  const isBitLane = bitLaneRegex.test(laneName);
   const version = await getExecOutput("bit -v", [], { cwd: wsDir });
 
   // If the version is lower than 1.11.42, throw an error recommending to downgrade the action version to v2
@@ -373,7 +375,7 @@ export default async function run(
     prNumber
   );
 
-  const lane = `${org}.${scope}/${laneName}`;
+  const lane = isBitLane ? laneName : `${org}.${scope}/${laneName}`;
   const cliArgs = [
     "ci",
     "pr",

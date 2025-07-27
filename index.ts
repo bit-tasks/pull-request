@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { context } from "@actions/github";
 import run from "./scripts/pull-request";
+import { bitLaneRegex } from "./scripts/bit-lanes";
 
 try {
   const githubToken = process.env.GITHUB_TOKEN;
@@ -16,6 +17,7 @@ try {
 
   const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
   const prNumber = context?.payload?.pull_request?.number;
+  const branchName = context?.payload?.pull_request?.head?.ref;
   const { owner, repo } = context?.repo;
 
   if (!githubToken) {
@@ -26,7 +28,16 @@ try {
     throw new Error("Pull Request number is not found");
   }
 
-  const laneName = `pr-${prNumber?.toString()}`;
+  const isBitLane = bitLaneRegex.test(branchName);
+
+  let laneName: string;
+
+  if (isBitLane) {
+    laneName = branchName;
+  } else {
+    laneName = `pr-${prNumber?.toString()}`;
+  }
+
   run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict, versionLabels, versionLabelsColors);
 } catch (error) {
   core.setFailed((error as Error).message);

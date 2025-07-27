@@ -13573,11 +13573,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b;
+var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const pull_request_1 = __importDefault(__nccwpck_require__(595));
+const bit_lanes_1 = __nccwpck_require__(5130);
 try {
     const githubToken = process.env.GITHUB_TOKEN;
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
@@ -13591,6 +13592,7 @@ try {
     };
     const args = process.env.LOG ? [`--log=${process.env.LOG}`] : [];
     const prNumber = (_b = (_a = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _a === void 0 ? void 0 : _a.pull_request) === null || _b === void 0 ? void 0 : _b.number;
+    const branchName = (_e = (_d = (_c = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.payload) === null || _c === void 0 ? void 0 : _c.pull_request) === null || _d === void 0 ? void 0 : _d.head) === null || _e === void 0 ? void 0 : _e.ref;
     const { owner, repo } = github_1.context === null || github_1.context === void 0 ? void 0 : github_1.context.repo;
     if (!githubToken) {
         throw new Error("GitHub token not found");
@@ -13598,12 +13600,31 @@ try {
     if (!prNumber) {
         throw new Error("Pull Request number is not found");
     }
-    const laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
+    const isBitLane = bit_lanes_1.bitLaneRegex.test(branchName);
+    let laneName;
+    if (isBitLane) {
+        laneName = branchName;
+    }
+    else {
+        laneName = `pr-${prNumber === null || prNumber === void 0 ? void 0 : prNumber.toString()}`;
+    }
     (0, pull_request_1.default)(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict, versionLabels, versionLabelsColors);
 }
 catch (error) {
     core.setFailed(error.message);
 }
+
+
+/***/ }),
+
+/***/ 5130:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.bitLaneRegex = void 0;
+exports.bitLaneRegex = /^(?!main$)[^/]+\/[^/]+$/;
 
 
 /***/ }),
@@ -13695,6 +13716,7 @@ const github_1 = __nccwpck_require__(5438);
 const core = __importStar(__nccwpck_require__(2186));
 const semver_1 = __importDefault(__nccwpck_require__(1383));
 const graphql_1 = __nccwpck_require__(8946);
+const bit_lanes_1 = __nccwpck_require__(5130);
 const createSnapMessageText = (githubToken, repo, owner, prNumber) => __awaiter(void 0, void 0, void 0, function* () {
     const octokit = (0, github_1.getOctokit)(githubToken);
     let messageText = "CI";
@@ -13926,6 +13948,7 @@ const createVersionLabels = (githubToken, repo, owner, prNumber, status, version
 function run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, strict, versionLabel, versionLabelsColors) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        const isBitLane = bit_lanes_1.bitLaneRegex.test(laneName);
         const version = yield (0, exec_1.getExecOutput)("bit -v", [], { cwd: wsDir });
         // If the version is lower than 1.11.42, throw an error recommending to downgrade the action version to v2
         // or upgrade Bit to ^1.11.42
@@ -13959,7 +13982,7 @@ function run(githubToken, repo, owner, prNumber, laneName, wsDir, args, build, s
             yield createVersionLabels(githubToken, repo, owner, prNumber, status, versionLabelsColors, core.getBooleanInput("clear-labels"));
         }
         const snapMessageText = yield createSnapMessageText(githubToken, repo, owner, prNumber);
-        const lane = `${org}.${scope}/${laneName}`;
+        const lane = isBitLane ? laneName : `${org}.${scope}/${laneName}`;
         const cliArgs = [
             "ci",
             "pr",
