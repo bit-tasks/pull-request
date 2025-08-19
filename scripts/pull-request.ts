@@ -48,9 +48,10 @@ const postOrUpdateComment = async (
   repo: string,
   owner: string,
   prNumber: number,
-  laneName: string
+  laneName: string,
+  isBitLane: boolean
 ) => {
-  const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${laneName}`;
+  const laneLink = `https://bit.cloud/${process.env.ORG}/${process.env.SCOPE}/~lane/${isBitLane ? laneName.split("/").pop() : laneName}`;
   let commentIntro = `⚠️ Please review the changes in the Bit lane: ${laneLink}`;
 
   const octokit = getOctokit(githubToken);
@@ -402,5 +403,5 @@ export default async function run(
     }
   });
 
-  postOrUpdateComment(githubToken, repo, owner, prNumber, laneName);
+  postOrUpdateComment(githubToken, repo, owner, prNumber, laneName, isBitLane);
 }
