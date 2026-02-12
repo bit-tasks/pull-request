@@ -164,6 +164,7 @@ const createVersionLabels = async (
   const versionLabels = [
     ...(status.newComponents || []),
     ...(status.modifiedComponents || []),
+    ...(status.autoTagPendingComponents || []),
   ].flatMap((componentId: string) => {
     const baseName = componentId.substring(componentId.indexOf("/") + 1);
 
